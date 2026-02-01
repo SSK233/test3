@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="topBar">
+   <widget class="QWidget" name="topBar" native="true">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -24,7 +24,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="blurTransition">
+   <widget class="QWidget" name="blurTransition" native="true">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -1654,11 +1654,10 @@
      <string>C</string>
     </property>
    </widget>
-
    <widget class="QPushButton" name="pushButton_2">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>150</y>
       <width>60</width>
       <height>40</height>
@@ -1673,18 +1672,10 @@
      <string>卸载</string>
     </property>
    </widget>
-
-
-
-
-
-
-
-
    <widget class="QPushButton" name="pushButton_11">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>210</y>
       <width>60</width>
       <height>40</height>
@@ -1702,7 +1693,7 @@
    <widget class="QPushButton" name="pushButton_12">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>270</y>
       <width>60</width>
       <height>40</height>
@@ -1720,7 +1711,7 @@
    <widget class="QPushButton" name="pushButton_13">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>330</y>
       <width>60</width>
       <height>40</height>
@@ -1738,7 +1729,7 @@
    <widget class="QPushButton" name="pushButton_14">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>390</y>
       <width>60</width>
       <height>40</height>
@@ -1756,7 +1747,7 @@
    <widget class="QPushButton" name="pushButton_15">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>450</y>
       <width>60</width>
       <height>40</height>
@@ -1774,7 +1765,7 @@
    <widget class="QPushButton" name="pushButton_16">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>510</y>
       <width>60</width>
       <height>40</height>
@@ -1792,7 +1783,7 @@
    <widget class="QPushButton" name="pushButton_17">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>570</y>
       <width>60</width>
       <height>40</height>
@@ -1810,7 +1801,7 @@
    <widget class="QPushButton" name="pushButton_18">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>700</x>
       <y>630</y>
       <width>60</width>
       <height>40</height>
