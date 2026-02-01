@@ -885,6 +885,9 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
             modbusMaster->disconnectDevice();
         }
         
+        // 清除textBrowser显示的电压信息
+        ui->textBrowser->clear();
+        
         // 更新状态标志
         MainWindow::m_serialPortOpen = false;
         
