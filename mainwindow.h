@@ -83,6 +83,7 @@ public:
 private slots:
     void on_key_Refresh_COM_clicked();//声明按键“刷新串口”点击函数
     void on_key_OpenOrClose_COM_clicked();//声明按键“启动串口”点击函数
+    void on_textBrowser_textChanged();//声明textBrowser文本变化处理函数
 private:
     Ui::MainWindow *ui;
 

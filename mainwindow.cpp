@@ -471,6 +471,27 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_16, &QPushButton::clicked, this, [this]() { clearRow(6); });
     connect(ui->pushButton_17, &QPushButton::clicked, this, [this]() { clearRow(7); });
     connect(ui->pushButton_18, &QPushButton::clicked, this, [this]() { clearRow(8); });
+
+    // 连接textBrowser文本变化事件
+    connect(ui->textBrowser, &QTextBrowser::textChanged, this, &MainWindow::on_textBrowser_textChanged);
+
+    // 初始化时隐藏raiseEffect组件
+    ui->raiseEffect->hide();
+}
+
+/**
+ * @brief 处理textBrowser文本变化事件
+ * @details 当textBrowser有文字时显示raiseEffect组件，没有文字时隐藏
+ */
+void MainWindow::on_textBrowser_textChanged()
+{
+    QString text = ui->textBrowser->toPlainText().trimmed();
+    
+    if (text.isEmpty()) {
+        ui->raiseEffect->hide();
+    } else {
+        ui->raiseEffect->show();
+    }
 }
 
 /**
