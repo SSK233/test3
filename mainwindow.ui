@@ -2066,11 +2066,11 @@
     </property>
     <property name="styleSheet">
      <string notr="true">
-      background-color: #ffd700;
+      background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #fa709a, stop:1 #fee140);
       border-radius: 8px;
-      box-shadow: inset 2px 2px 4px rgba(255,255,255,0.8),
-                  inset -2px -2px 4px rgba(0,0,0,0.3),
-                  3px 3px 8px rgba(0,0,0,0.4);
+      box-shadow: inset 20px 20px 40px rgba(255,255,255,0.8),
+                  inset -20px -20px 40px rgba(0,0,0,0.3),
+                  30px 30px 80px rgba(0,0,0,0.4);
      </string>
     </property>
    </widget>
