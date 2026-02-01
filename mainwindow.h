@@ -102,5 +102,8 @@ public:
     static void writeRegister(int address, int value);
     void clearRow(int rowIndex);
     void readRegister(int address, std::function<void(int)> callback);
+    
+    void pauseRefreshTimer();
+    void resumeRefreshTimer();
 };
 #endif // MAINWINDOW_H

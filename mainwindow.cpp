@@ -101,15 +101,26 @@ void RowButtonGroup::onButtonClicked()
     QPushButton *button = qobject_cast<QPushButton *>(sender());
     if (!button) return;  // 如果无法转换类型，返回
 
+    qDebug() << "按钮被点击 - objectName:" << button->objectName() << "rowIndex:" << rowIndex;
+
     // 查找被点击按钮在buttons向量中的索引
     int index = buttons.indexOf(button);
+    qDebug() << "按钮索引:" << index << "按钮数量:" << buttons.size();
+    
     if (index != -1 && index < 8) {  // 确保只处理前8个按钮
         states[index] = !states[index];  // 切换按钮状态（选中/未选中）
         applyButtonStatesToUI();        // 更新按钮UI样式
         updateSumDisplay();            // 更新总和显示
         
+        qDebug() << "按钮状态更新成功 - rowIndex:" << rowIndex << "registerAddress:" << registerAddress;
+        
         // 第一行：8个按钮控制寄存器1的高8位
         if (rowIndex == 0) {
+            qDebug() << "正在处理第一行按钮，准备写入寄存器" << registerAddress;
+            
+            // 暂停定时刷新，避免竞争条件
+            mainWindow->pauseRefreshTimer();
+            
             // 将8个按钮状态编码为一个16位值的高8位
             int registerValue = 0;
             for (int i = 0; i < 8; ++i) {
@@ -119,23 +130,38 @@ void RowButtonGroup::onButtonClicked()
             // 读取寄存器的低8位（保持不变）
             recentlyChangedRegisters.insert(registerAddress);
             
+            qDebug() << "按钮状态编码完成，准备读取寄存器低8位 - registerValue:" << registerValue;
+            
             mainWindow->readRegister(registerAddress, [this, registerValue](int lowValue) {
+                qDebug() << "读取寄存器回调 - lowValue:" << lowValue << "registerValue:" << registerValue;
                 if (lowValue != -1) {
                     // 保留低8位，只更新高8位
                     int newValue = (lowValue & 0x00FF) | (registerValue & 0xFF00);
                     
+                    qDebug() << "准备写入寄存器 - 地址:" << registerAddress << "新值:" << newValue;
+                    
                     MainWindow::writeRegister(registerAddress, newValue);
                     
-                    // 延迟清理缓冲区（2秒后），避免长时间影响后续读取
-                    QTimer::singleShot(2000, this, [this]() {
-                        recentlyChangedRegisters.remove(registerAddress);
-                    });
+                    // 立即清理缓冲区，因为写入操作已经完成
+                    recentlyChangedRegisters.remove(registerAddress);
+                    qDebug() << "清理缓冲区 - registerAddress:" << registerAddress;
+                    
+                    // 立即恢复定时刷新，因为写入操作已经完成
+                    mainWindow->resumeRefreshTimer();
+                } else {
+                    qDebug() << "读取寄存器失败，lowValue为-1";
+                    // 读取失败时也要清理缓冲区
+                    recentlyChangedRegisters.remove(registerAddress);
+                    // 立即恢复定时刷新
+                    mainWindow->resumeRefreshTimer();
                 }
             });
         } else {
             // 其他行：暂时不实现
             qDebug() << "行" << rowIndex << "的按钮点击暂未实现";
         }
+    } else {
+        qDebug() << "按钮索引无效或超出范围 - index:" << index;
     }
 }
 
@@ -535,10 +561,10 @@ void MainWindow::initModbus()
     modbusMaster->setConnectionParameter(QModbusDevice::SerialStopBitsParameter, COM->stopBits());
     
     // 设置超时时间（毫秒）
-    modbusMaster->setTimeout(1000);
+    modbusMaster->setTimeout(200);
     
     // 设置重试次数
-    modbusMaster->setNumberOfRetries(2);
+    modbusMaster->setNumberOfRetries(0);
     
     // 建立Modbus连接
     if (!modbusMaster->connectDevice()) {
@@ -595,7 +621,7 @@ void MainWindow::writeRegister(int address, int value)
     // 发送写请求并处理响应
     if (auto *reply = modbusMaster->sendWriteRequest(writeUnit, 1)) {
         if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, reply, [reply, address, value]() {
+            connect(reply, &QModbusReply::finished, modbusMaster, [reply, address, value]() {
                 if (reply->error() != QModbusDevice::NoError) {
                     qDebug() << "写入失败 - 地址:" << address << "值:" << value 
                              << "错误:" << reply->errorString() 
@@ -978,5 +1004,29 @@ void MainWindow::readSlave3Register7()
         } else {
             reply->deleteLater();
         }
+    }
+}
+
+/**
+ * @brief 暂停定时刷新定时器
+ * @details 用于在写入操作前暂停自动刷新，避免竞争条件
+ */
+void MainWindow::pauseRefreshTimer()
+{
+    if (refreshTimer && refreshTimer->isActive()) {
+        refreshTimer->stop();
+        qDebug() << "定时刷新已暂停";
+    }
+}
+
+/**
+ * @brief 恢复定时刷新定时器
+ * @details 用于在写入操作后恢复自动刷新
+ */
+void MainWindow::resumeRefreshTimer()
+{
+    if (refreshTimer && !refreshTimer->isActive()) {
+        refreshTimer->start(1000);
+        qDebug() << "定时刷新已恢复";
     }
 }
