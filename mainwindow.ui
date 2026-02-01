@@ -23,6 +23,23 @@
       <height>90</height>
      </rect>
     </property>
+    <widget class="QWidget" name="raiseEffect" native="true">
+     <property name="geometry">
+      <rect>
+       <x>-10</x>
+       <y>-10</y>
+       <width>190</width>
+       <height>70</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+      background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #fa709a, stop:1 #fee140);
+      border-radius: 8px;
+      border: 3px solid #ffed4e;
+     </string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="blurTransition" native="true">
     <property name="geometry">
@@ -2055,142 +2072,6 @@
      </font>
     </property>
    </widget>
-   <widget class="QWidget" name="raiseEffect" native="true">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>190</width>
-      <height>70</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">
-      background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #fa709a, stop:1 #fee140);
-      border-radius: 8px;
-      box-shadow: inset 20px 20px 40px rgba(255,255,255,0.8),
-                  inset -20px -20px 40px rgba(0,0,0,0.3),
-                  30px 30px 80px rgba(0,0,0,0.4);
-     </string>
-    </property>
-   </widget>
-   <zorder>topBar</zorder>
-   <zorder>raiseEffect</zorder>
-   <zorder>blurTransition</zorder>
-   <zorder>btn_0_1</zorder>
-   <zorder>btn_0_2</zorder>
-   <zorder>btn_0_2_2</zorder>
-   <zorder>btn_0_5</zorder>
-   <zorder>btn_1</zorder>
-   <zorder>btn_2</zorder>
-   <zorder>btn_2_2</zorder>
-   <zorder>btn_5</zorder>
-   <zorder>lineEditSum</zorder>
-   <zorder>btn1_0_1</zorder>
-   <zorder>btn1_0_2</zorder>
-   <zorder>btn1_0_2_2</zorder>
-   <zorder>btn1_0_5</zorder>
-   <zorder>btn1_1</zorder>
-   <zorder>btn1_2</zorder>
-   <zorder>btn1_2_2</zorder>
-   <zorder>btn1_5</zorder>
-   <zorder>lineEditSum1</zorder>
-   <zorder>btn2_0_1</zorder>
-   <zorder>btn2_0_2</zorder>
-   <zorder>btn2_0_2_2</zorder>
-   <zorder>btn2_0_5</zorder>
-   <zorder>btn2_1</zorder>
-   <zorder>btn2_2</zorder>
-   <zorder>btn2_2_2</zorder>
-   <zorder>btn2_5</zorder>
-   <zorder>lineEditSum2</zorder>
-   <zorder>btn3_0_1</zorder>
-   <zorder>btn3_0_2</zorder>
-   <zorder>btn3_0_2_2</zorder>
-   <zorder>btn3_0_5</zorder>
-   <zorder>btn3_1</zorder>
-   <zorder>btn3_2</zorder>
-   <zorder>btn3_2_2</zorder>
-   <zorder>btn3_5</zorder>
-   <zorder>lineEditSum3</zorder>
-   <zorder>btn4_0_1</zorder>
-   <zorder>btn4_0_2</zorder>
-   <zorder>btn4_0_2_2</zorder>
-   <zorder>btn4_0_5</zorder>
-   <zorder>btn4_1</zorder>
-   <zorder>btn4_2</zorder>
-   <zorder>btn4_2_2</zorder>
-   <zorder>btn4_5</zorder>
-   <zorder>lineEditSum4</zorder>
-   <zorder>btn5_0_1</zorder>
-   <zorder>btn5_0_2</zorder>
-   <zorder>btn5_0_2_2</zorder>
-   <zorder>btn5_0_5</zorder>
-   <zorder>btn5_1</zorder>
-   <zorder>btn5_2</zorder>
-   <zorder>btn5_2_2</zorder>
-   <zorder>btn5_5</zorder>
-   <zorder>lineEditSum5</zorder>
-   <zorder>btn6_0_1</zorder>
-   <zorder>btn6_0_2</zorder>
-   <zorder>btn6_0_2_2</zorder>
-   <zorder>btn6_0_5</zorder>
-   <zorder>btn6_1</zorder>
-   <zorder>btn6_2</zorder>
-   <zorder>btn6_2_2</zorder>
-   <zorder>btn6_5</zorder>
-   <zorder>lineEditSum6</zorder>
-   <zorder>btn7_0_1</zorder>
-   <zorder>btn7_0_2</zorder>
-   <zorder>btn7_0_2_2</zorder>
-   <zorder>btn7_0_5</zorder>
-   <zorder>btn7_1</zorder>
-   <zorder>btn7_2</zorder>
-   <zorder>btn7_2_2</zorder>
-   <zorder>btn7_5</zorder>
-   <zorder>lineEditSum7</zorder>
-   <zorder>btn8_0_1</zorder>
-   <zorder>btn8_0_2</zorder>
-   <zorder>btn8_0_2_2</zorder>
-   <zorder>btn8_0_5</zorder>
-   <zorder>btn8_1</zorder>
-   <zorder>btn8_2</zorder>
-   <zorder>btn8_2_2</zorder>
-   <zorder>btn8_5</zorder>
-   <zorder>lineEditSum8</zorder>
-   <zorder>label</zorder>
-   <zorder>label_2</zorder>
-   <zorder>label_3</zorder>
-   <zorder>label_4</zorder>
-   <zorder>label_5</zorder>
-   <zorder>label_6</zorder>
-   <zorder>label_7</zorder>
-   <zorder>label_8</zorder>
-   <zorder>label_9</zorder>
-   <zorder>pushButton_2</zorder>
-   <zorder>pushButton_11</zorder>
-   <zorder>pushButton_12</zorder>
-   <zorder>pushButton_13</zorder>
-   <zorder>pushButton_14</zorder>
-   <zorder>pushButton_15</zorder>
-   <zorder>pushButton_16</zorder>
-   <zorder>pushButton_17</zorder>
-   <zorder>pushButton_18</zorder>
-   <zorder>label_10</zorder>
-   <zorder>label_11</zorder>
-   <zorder>label_12</zorder>
-   <zorder>label_13</zorder>
-   <zorder>label_14</zorder>
-   <zorder>label_15</zorder>
-   <zorder>label_16</zorder>
-   <zorder>label_17</zorder>
-   <zorder>label_18</zorder>
-   <zorder>comboBox_available_COM</zorder>
-   <zorder>key_Refresh_COM</zorder>
-   <zorder>radioButton_checkOpen</zorder>
-   <zorder>key_OpenOrClose_COM</zorder>
-   <zorder>label_19</zorder>
-   <zorder>textBrowser</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
