@@ -1,0 +1,45 @@
+# Qt
+qmake/
+Makefile
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.qmlc
+*.jsc
+Makefile.Debug
+Makefile.Release
+*.ilk
+*.pdb
+*.exe
+*.dll
+*.obj
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+
+# QtCreator
+.qtcreator/
+
+# Build
+build/
+debug/
+release/
+*.pri
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
