@@ -1,3 +1,9 @@
+/**
+ * @file modbusmanager.h
+ * @brief Modbus通信管理类定义文件
+ * @details 包含ModbusManager类的声明，负责处理Modbus RTU串行通信，实现单例模式
+ */
+
 #ifndef MODBUSMANAGER_H
 #define MODBUSMANAGER_H
 
@@ -6,46 +12,85 @@
 #include <QSerialPort>
 #include <functional>
 
+/**
+ * @class ModbusManager
+ * @brief Modbus通信管理类
+ * @details 负责Modbus RTU串行通信的初始化、读写寄存器、连接状态管理等功能，使用单例模式
+ */
 class ModbusManager : public QObject
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief 构造函数
+     * @param parent 父对象指针
+     */
     explicit ModbusManager(QObject *parent = nullptr);
+    
+    /**
+     * @brief 析构函数
+     */
     ~ModbusManager();
 
-    // 初始化Modbus RTU通信
+    /**
+     * @brief 初始化Modbus RTU通信
+     * @param portName 串口名称
+     * @param baudRate 波特率，默认为9600
+     * @return 初始化是否成功
+     */
     bool initModbus(const QString &portName, int baudRate = 9600);
     
-    // 写入寄存器数据
+    /**
+     * @brief 写入寄存器数据
+     * @param address 寄存器地址
+     * @param value 要写入的值
+     */
     void writeRegister(int address, int value);
     
-    // 读取寄存器数据
+    /**
+     * @brief 读取寄存器数据
+     * @param address 寄存器地址
+     * @param callback 回调函数，用于处理读取结果
+     */
     void readRegister(int address, std::function<void(int)> callback);
     
-    // 读取从站3的寄存器7（电压数据）
+    /**
+     * @brief 读取从站3的寄存器7（电压数据）
+     * @param callback 回调函数，用于处理读取结果
+     */
     void readSlave3Register7(std::function<void(int)> callback);
     
-    // 关闭Modbus连接
+    /**
+     * @brief 关闭Modbus连接
+     */
     void closeModbus();
     
-    // 获取Modbus连接状态
+    /**
+     * @brief 获取Modbus连接状态
+     * @return 连接是否已建立
+     */
     bool isConnected() const;
     
-    // 获取Modbus连接是否稳定
+    /**
+     * @brief 获取Modbus连接是否稳定
+     * @return 连接是否稳定
+     */
     bool isStable() const;
     
-    // 静态实例获取方法
+    /**
+     * @brief 静态实例获取方法
+     * @return ModbusManager单例实例
+     */
     static ModbusManager* instance();
 
 private:
-    QModbusRtuSerialMaster *modbusMaster;
-    QSerialPort *COM;
-    bool m_serialPortOpen;
-    bool m_modbusStable;
+    QModbusRtuSerialMaster *modbusMaster;  // Modbus RTU主站对象
+    QSerialPort *COM;                      // 串口对象
+    bool m_serialPortOpen;                 // 串口状态标志
+    bool m_modbusStable;                   // Modbus连接稳定标志
     
-    // 静态单例实例
-    static ModbusManager* m_instance;
+    static ModbusManager* m_instance;      // 静态单例实例
 };
 
 #endif // MODBUSMANAGER_H

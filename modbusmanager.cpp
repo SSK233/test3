@@ -1,3 +1,9 @@
+/**
+ * @file modbusmanager.cpp
+ * @brief Modbus通信管理类实现文件
+ * @details 包含ModbusManager类的实现，负责处理Modbus RTU串行通信的具体操作
+ */
+
 #include "modbusmanager.h"
 #include <QDebug>
 #include <QEventLoop>

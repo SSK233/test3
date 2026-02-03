@@ -1,3 +1,9 @@
+/**
+ * @file mainwindow.cpp
+ * @brief 主窗口类实现文件
+ * @details 包含MainWindow类的实现，负责应用程序的界面交互、串口管理、波形图显示等功能
+ */
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "rowbuttongroup.h"

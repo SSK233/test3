@@ -1,3 +1,9 @@
+/**
+ * @file rowbuttongroup.cpp
+ * @brief 行按钮组管理类实现文件
+ * @details 包含RowButtonGroup类的实现，负责处理按钮点击事件、文本框输入事件，以及与Modbus寄存器的通信
+ */
+
 #include "rowbuttongroup.h"
 #include "mainwindow.h"
 #include "modbusmanager.h"
