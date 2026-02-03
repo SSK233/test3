@@ -257,23 +257,29 @@ void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWid
  */
 void WaveformChart::updateWaveformData(double voltage)
 {
+    // 添加新的电压数据点到数据列表
     voltageData.append(voltage);
+    // 更新总数据点计数
     m_dataPointCount++;
 
+    // 如果数据点数量超过最大值，移除最旧的数据点并移动时间窗口起始点
     if (voltageData.size() > MAX_DATA_POINTS) {
         voltageData.removeFirst();
         m_currentTimeWindowStart++;
     }
 
+    // 更新图表数据
     if (voltageSeries) {
         voltageSeries->clear();
 
         double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
+        // 重新添加所有数据点到序列，保持时间窗口的连续性
         for (int i = 0; i < voltageData.size(); ++i) {
             double time = m_currentTimeWindowStart + i;
             voltageSeries->append(time, voltageData[i]);
         }
 
+        // 更新X轴范围，确保时间窗口正确显示
         QValueAxis *axisX = qobject_cast<QValueAxis*>(voltageChart->axisX(voltageSeries));
         if (axisX) {
             double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
@@ -281,27 +287,34 @@ void WaveformChart::updateWaveformData(double voltage)
         }
     }
 
+    // 如果使用自适应Y轴范围，根据数据自动调整Y轴显示范围
     if (m_useAdaptiveRange && !voltageData.isEmpty()) {
         double minVoltage = voltageData[0];
         double maxVoltage = voltageData[0];
 
+        // 遍历所有数据点，找出最小值和最大值
         for (double v : voltageData) {
             if (v < minVoltage) minVoltage = v;
             if (v > maxVoltage) maxVoltage = v;
         }
 
+        // 计算边距，确保图表显示时留有足够空间
         double margin = (maxVoltage - minVoltage) * 0.1;
+        // 保证最小边距为0.5，防止显示范围过小
         if (margin < 0.5) margin = 0.5;
 
+        // 计算新的Y轴显示范围
         double newMin = minVoltage - margin;
         double newMax = maxVoltage + margin;
 
+        // 更新Y轴范围
         QValueAxis *axisY = qobject_cast<QValueAxis*>(voltageChart->axisY(voltageSeries));
         if (axisY) {
             axisY->setRange(newMin, newMax);
         }
     }
 
+    // 发送数据更新信号
     emit dataUpdated(voltageData);
 }
 
