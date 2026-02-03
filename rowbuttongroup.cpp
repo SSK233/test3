@@ -2,6 +2,8 @@
  * @file rowbuttongroup.cpp
  * @brief 行按钮组管理类实现文件
  * @details 包含RowButtonGroup类的实现，负责处理按钮点击事件、文本框输入事件，以及与Modbus寄存器的通信
+ * @version 1.0
+ * @date 2024
  */
 
 #include "rowbuttongroup.h"
@@ -13,6 +15,11 @@
 #include <QLocale>
 #include <limits.h>
 
+/**
+ * @brief 构造函数
+ * @param parent 父对象指针
+ * @details 初始化成员变量，创建编辑计时器并设置信号槽连接
+ */
 RowButtonGroup::RowButtonGroup(QObject *parent)
     : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false)
 {
@@ -26,6 +33,22 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
     });
 }
 
+/**
+ * @brief 初始化行按钮组
+ * @param btn0_1 0.1按钮
+ * @param btn0_2 0.2按钮
+ * @param btn0_2_2 第二个0.2按钮
+ * @param btn0_5 0.5按钮
+ * @param btn1 1.0按钮
+ * @param btn2 2.0按钮
+ * @param btn2_2 第二个2.0按钮
+ * @param btn5 5.0按钮
+ * @param lineEdit 显示总和的文本框
+ * @param mainWindow 主窗口指针
+ * @param rowIndex 行索引
+ * @param address Modbus寄存器地址
+ * @details 初始化按钮列表、对应数值、按钮状态，并连接信号槽
+ */
 void RowButtonGroup::initialize(QPushButton *btn0_1, QPushButton *btn0_2, QPushButton *btn0_2_2,
                                QPushButton *btn0_5, QPushButton *btn1, QPushButton *btn2,
                                QPushButton *btn2_2, QPushButton *btn5, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address)
@@ -64,6 +87,11 @@ void RowButtonGroup::initialize(QPushButton *btn0_1, QPushButton *btn0_2, QPushB
     updateSumDisplay();
 }
 
+/**
+ * @brief 按钮点击事件处理函数
+ * @details 处理按钮点击事件，切换按钮状态，更新UI和显示，并将状态写入Modbus寄存器
+ *          仅处理第一行按钮(rowIndex == 0)，使用寄存器高8位存储按钮状态
+ */
 void RowButtonGroup::onButtonClicked()
 {
     if (m_isUpdating) return;
@@ -131,6 +159,10 @@ void RowButtonGroup::onButtonClicked()
     }
 }
 
+/**
+ * @brief 更新总和显示
+ * @details 计算所有选中按钮的数值总和，并更新到文本框中显示
+ */
 void RowButtonGroup::updateSumDisplay()
 {
     if (!lineEdit) return;
@@ -154,6 +186,10 @@ void RowButtonGroup::updateSumDisplay()
     m_isUpdating = wasUpdating;
 }
 
+/**
+ * @brief 应用按钮状态到UI
+ * @details 根据按钮状态设置按钮的样式，选中的按钮使用选中样式，未选中的按钮使用未选中样式
+ */
 void RowButtonGroup::applyButtonStatesToUI()
 {
     for (int i = 0; i < buttons.size(); ++i) {
@@ -165,6 +201,12 @@ void RowButtonGroup::applyButtonStatesToUI()
     }
 }
 
+/**
+ * @brief 文本框内容变化事件处理函数
+ * @param text 文本框的新内容
+ * @details 处理文本框输入事件，根据输入的数值自动选择对应的按钮组合，并将结果写入Modbus寄存器
+ *          仅处理第一行(rowIndex == 0)，支持0.0-10.0的数值范围
+ */
 void RowButtonGroup::onLineEditTextChanged(const QString &text)
 {
     if (m_isUpdating) return;
@@ -237,6 +279,11 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
     }
 }
 
+/**
+ * @brief 求解按钮组合
+ * @param targetSum 目标总和
+ * @details 使用递归回溯法求解最小组合，使得选中的按钮数值总和等于目标值
+ */
 void RowButtonGroup::solveButtonStates(double targetSum)
 {
     QVector<int> intValues;
@@ -259,6 +306,16 @@ void RowButtonGroup::solveButtonStates(double targetSum)
     }
 }
 
+/**
+ * @brief 递归求解组合
+ * @param target 目标值(放大10倍的整数值)
+ * @param values 按钮数值数组(放大10倍的整数值)
+ * @param index 当前处理的索引
+ * @param used 当前使用状态
+ * @param bestUsed 最优解使用状态
+ * @param bestCount 最优解按钮数量
+ * @details 递归回溯算法，尝试所有可能的按钮组合，找到按钮数量最少的组合
+ */
 void RowButtonGroup::solveCombinations(int target, const QVector<int> &values, int index, QVector<bool> &used, QVector<bool> &bestUsed, int &bestCount)
 {
     if (target == 0) {

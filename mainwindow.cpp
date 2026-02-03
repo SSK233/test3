@@ -158,11 +158,6 @@ void MainWindow::on_textBrowser_textChanged()
 }
 
 
-
-
-
-
-
 /**
  * @brief 刷新所有行的状态
  */
