@@ -22,9 +22,10 @@ WaveformChart::WaveformChart(QObject *parent)
     , waveformUpdateTimer(nullptr)
     , m_dataPointCount(0)
     , m_updateInterval(1000)
-    , m_yAxisMin(225.0)
+    , m_yAxisMin(228.0)
     , m_yAxisMax(235.0)
     , m_title("电压实时波形图")
+    , m_useAdaptiveRange(true)
 {
 }
 
@@ -98,7 +99,9 @@ void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWid
 
     QValueAxis *axisY = new QValueAxis();
     axisY->setTitleText("电压 (V)");
-    axisY->setRange(m_yAxisMin, m_yAxisMax);
+    if (!m_useAdaptiveRange) {
+        axisY->setRange(m_yAxisMin, m_yAxisMax);
+    }
     voltageChart->addAxis(axisY, Qt::AlignLeft);
     voltageSeries->attachAxis(axisY);
 
@@ -131,6 +134,27 @@ void WaveformChart::updateWaveformData(double voltage)
 
         for (int i = 0; i < voltageData.size(); ++i) {
             voltageSeries->append(i, voltageData[i]);
+        }
+    }
+
+    if (m_useAdaptiveRange && !voltageData.isEmpty()) {
+        double minVoltage = voltageData[0];
+        double maxVoltage = voltageData[0];
+
+        for (double v : voltageData) {
+            if (v < minVoltage) minVoltage = v;
+            if (v > maxVoltage) maxVoltage = v;
+        }
+
+        double margin = (maxVoltage - minVoltage) * 0.1;
+        if (margin < 0.5) margin = 0.5;
+
+        double newMin = minVoltage - margin;
+        double newMax = maxVoltage + margin;
+
+        QValueAxis *axisY = qobject_cast<QValueAxis*>(voltageChart->axisY(voltageSeries));
+        if (axisY) {
+            axisY->setRange(newMin, newMax);
         }
     }
 
@@ -198,8 +222,9 @@ void WaveformChart::setUpdateInterval(int interval)
  * @brief 设置Y轴范围
  * @param min 最小值
  * @param max 最大值
+ * @param adaptive 是否使用自适应范围
  */
-void WaveformChart::setYAxisRange(double min, double max)
+void WaveformChart::setYAxisRange(double min, double max, bool adaptive)
 {
     if (min >= max) {
         qWarning() << "Y轴最小值必须小于最大值";
@@ -208,6 +233,7 @@ void WaveformChart::setYAxisRange(double min, double max)
 
     m_yAxisMin = min;
     m_yAxisMax = max;
+    m_useAdaptiveRange = adaptive;
 
     if (voltageChart) {
         QAbstractAxis *axisY = voltageChart->axisY();

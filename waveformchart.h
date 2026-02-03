@@ -70,8 +70,9 @@ public:
      * @brief 设置Y轴范围
      * @param min 最小值
      * @param max 最大值
+     * @param adaptive 是否使用自适应范围（默认为true）
      */
-    void setYAxisRange(double min, double max);
+    void setYAxisRange(double min, double max, bool adaptive = true);
 
     /**
      * @brief 获取当前数据点数量
@@ -112,6 +113,7 @@ private:
     double m_yAxisMin;
     double m_yAxisMax;
     QString m_title;
+    bool m_useAdaptiveRange;
 };
 
 #endif // WAVEFORMCHART_H
