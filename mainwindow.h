@@ -6,8 +6,6 @@
 #include <QLineEdit>
 #include <QVector>
 #include <QLocale>
-#include <QModbusRtuSerialMaster>
-#include <QModbusDataUnit>
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QComboBox>
@@ -56,7 +54,6 @@ private:
 
     RowButtonGroup row0, row1, row2, row3, row4, row5, row6, row7, row8;
     static bool m_serialPortOpen;  // 串口状态标志
-    static QModbusRtuSerialMaster *modbusMaster;
     QTimer *refreshTimer;
     QTimer *slave3Timer;
     
@@ -70,9 +67,6 @@ private:
     static constexpr int MAX_DATA_POINTS = 500;
 
 public:
-    static bool m_modbusStable;    // Modbus连接稳定标志
-    
-    void initModbus();
     void refreshAllRows();
     void refreshRow(int rowIndex);
     void readSlave3Register7();
@@ -84,10 +78,7 @@ public:
     void updateWaveformData(double voltage);
     void setupWaveformChart();
     
-public:
-    static void writeRegister(int address, int value);
     void clearRow(int rowIndex);
-    void readRegister(int address, std::function<void(int)> callback);
     
     void pauseRefreshTimer();
     void resumeRefreshTimer();

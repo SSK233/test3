@@ -2,13 +2,12 @@
 #include "ui_mainwindow.h"
 #include "RowButtonGroup.h"
 #include "styles.h"
+#include "modbusmanager.h"
 #include <limits.h>
 #include <QDebug>
 #include <QTimer>
 #include <QListView>
-#include <QEventLoop>
 
-QSerialPort *COM = new QSerialPort();
 bool MainWindow::m_serialPortOpen = false;
 
 /**
@@ -27,8 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     this->setStyleSheet(Styles::WINDOW_BACKGROUND_STYLE);
     ui->centralwidget->setStyleSheet(Styles::CENTRAL_WIDGET_STYLE);
 
-    // 初始化Modbus RTU通信（在串口打开后初始化）
-    // initModbus(); // 移到串口打开时初始化
+    // Modbus通信由ModbusManager管理
 
     // 初始化定时刷新定时器
     refreshTimer = new QTimer(this);
@@ -153,236 +151,11 @@ void MainWindow::on_textBrowser_textChanged()
     }
 }
 
-/**
- * @brief 初始化Modbus RTU串行主站通信
- * @details 1. 创建QModbusRtuSerialMaster实例作为Modbus主站
- *          2. 配置标准Modbus RTU串口参数：COM5端口、9600波特率、8位数据位、无校验位、1位停止位
- *          3. 尝试建立与Modbus从设备的连接
- *          4. 输出连接结果日志信息便于调试
- */
-void MainWindow::initModbus()
-{
-    // 如果Modbus已经连接，先断开
-    if (modbusMaster) {
-        if (modbusMaster->state() == QModbusDevice::ConnectedState) {
-            modbusMaster->disconnectDevice();
-        }
-        delete modbusMaster;
-        modbusMaster = nullptr;
-    }
-    
-    // 检查串口是否已配置
-    if (!COM || COM->portName().isEmpty()) {
-        qDebug() << "Modbus初始化失败: 串口未配置";
-        return;
-    }
-    
-    // 如果全局串口已打开，先关闭它
-    if (COM->isOpen()) {
-        qDebug() << "关闭全局串口以让Modbus直接访问";
-        COM->close();
-    }
-    
-    // 创建Modbus主站实例
-    modbusMaster = new QModbusRtuSerialMaster();
-    
-    // 配置Modbus连接参数
-    modbusMaster->setConnectionParameter(QModbusDevice::SerialPortNameParameter, COM->portName());
-    modbusMaster->setConnectionParameter(QModbusDevice::SerialBaudRateParameter, COM->baudRate());
-    modbusMaster->setConnectionParameter(QModbusDevice::SerialDataBitsParameter, COM->dataBits());
-    modbusMaster->setConnectionParameter(QModbusDevice::SerialParityParameter, COM->parity());
-    modbusMaster->setConnectionParameter(QModbusDevice::SerialStopBitsParameter, COM->stopBits());
-    
-    // 设置超时时间（毫秒）- 增加到500ms以提高稳定性
-    modbusMaster->setTimeout(400);
-    
-    // 设置重试次数 - 增加到2次重试
-    modbusMaster->setNumberOfRetries(1);
-    
-    // 建立Modbus连接
-    if (!modbusMaster->connectDevice()) {
-        qDebug() << "Modbus连接失败:" << modbusMaster->errorString();
-        delete modbusMaster;
-        modbusMaster = nullptr;
-        return;
-    }
-    
-    // 等待连接建立
-    QEventLoop loop;
-    QTimer::singleShot(500, &loop, &QEventLoop::quit);  // 等待500ms
-    loop.exec();
-    
-    if (modbusMaster->state() == QModbusDevice::ConnectedState) {
-        qDebug() << "Modbus连接成功 - 端口:" << COM->portName() << ", 波特率:" << COM->baudRate();
-        // 重置连接稳定标志
-        MainWindow::m_modbusStable = false;
-        // 延迟2秒后标记连接稳定，给设备足够的初始化时间
-        QTimer::singleShot(500, this, []() {
-            MainWindow::m_modbusStable = true;
-            qDebug() << "Modbus连接已稳定，可以开始正常通信";
-        });
-    } else {
-        qDebug() << "Modbus连接超时 - 最终状态:" << modbusMaster->state();
-        delete modbusMaster;
-        modbusMaster = nullptr;
-    }
-}
 
-/**
- * @brief 写入寄存器数据
- * @param address 寄存器地址
- * @param value   要写入的值
- */
-void MainWindow::writeRegister(int address, int value)
-{
-    // 检查Modbus连接状态
-    if (!modbusMaster) {
-        qDebug() << "写入失败: Modbus主站未初始化";
-        return;
-    }
-    
-    if (modbusMaster->state() != QModbusDevice::ConnectedState) {
-        qDebug() << "写入失败: Modbus未连接 - 当前状态:" << modbusMaster->state();
-        return;
-    }
-    
-    // 验证寄存器地址范围（0-65535）
-    if (address < 0 || address > 65535) {
-        qDebug() << "写入失败: 寄存器地址" << address << "超出范围(0-65535)";
-        return;
-    }
-    
-    qDebug() << "尝试写入寄存器 - 地址:" << address << "值:" << value;
-    
-    // 创建写寄存器请求单元
-    QModbusDataUnit writeUnit(QModbusDataUnit::HoldingRegisters, address, 1);
-    writeUnit.setValue(0, value);
-    
-    // 发送写请求并处理响应
-    if (auto *reply = modbusMaster->sendWriteRequest(writeUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, modbusMaster, [reply, address, value]() {
-                if (reply->error() != QModbusDevice::NoError) {
-                    qDebug() << "写入失败 - 地址:" << address << "值:" << value 
-                             << "错误:" << reply->errorString() 
-                             << "错误代码:" << reply->error();
-                    
-                    // 详细输出Modbus异常代码
-                    if (reply->error() == QModbusDevice::ProtocolError) {
-                        auto modbusReply = qobject_cast<QModbusReply*>(reply);
-                        if (modbusReply && modbusReply->rawResult().isException()) {
-                            int exceptionCode = modbusReply->rawResult().exceptionCode();
-                            qDebug() << "Modbus异常代码:" << exceptionCode;
-                            switch (exceptionCode) {
-                                case 1: qDebug() << "异常说明: ILLEGAL FUNCTION (不支持的功能码)"; break;
-                                case 2: qDebug() << "异常说明: ILLEGAL DATA ADDRESS (无效的寄存器地址)"; break;
-                                case 3: qDebug() << "异常说明: ILLEGAL DATA VALUE (无效的寄存器值)"; break;
-                                case 4: qDebug() << "异常说明: SERVER DEVICE FAILURE (设备故障)"; break;
-                                case 5: qDebug() << "异常说明: ACKNOWLEDGE (确认，但需要时间)"; break;
-                                case 6: qDebug() << "异常说明: SERVER DEVICE BUSY (设备忙)"; break;
-                                case 7: qDebug() << "异常说明: MEMORY PARITY ERROR (内存校验错误)"; break;
-                                case 8: qDebug() << "异常说明: GATEWAY PATH UNAVAILABLE (网关路径不可用)"; break;
-                                case 9: qDebug() << "异常说明: GATEWAY TARGET FAILED (网关目标失败)"; break;
-                                default: qDebug() << "异常说明: 未知异常"; break;
-                            }
-                        }
-                    }
-                } else {
-                    qDebug() << "写入成功 - 地址:" << address << "值:" << value;
-                }
-                reply->deleteLater();
-            });
-        } else {
-            qDebug() << "写入失败 - 地址:" << address << "值:" << value << "请求立即完成但无响应";
-            reply->deleteLater();
-        }
-    } else {
-        qDebug() << "写入请求发送失败 - 地址:" << address << "值:" << value 
-                 << "错误:" << modbusMaster->errorString();
-    }
-}
 
-/**
- * @brief 读取寄存器数据
- * @param address 寄存器地址
- * @param callback 读取完成后的回调函数
- */
-void MainWindow::readRegister(int address, std::function<void(int)> callback)
-{
-    // 检查Modbus连接状态
-    if (!modbusMaster) {
-        qDebug() << "读取失败: Modbus主站未初始化";
-        callback(-1);
-        return;
-    }
-    
-    if (modbusMaster->state() != QModbusDevice::ConnectedState) {
-        qDebug() << "读取失败: Modbus未连接 - 当前状态:" << modbusMaster->state();
-        callback(-1);
-        return;
-    }
-    
-    // 验证寄存器地址范围（0-65535）
-    if (address < 0 || address > 65535) {
-        qDebug() << "读取失败: 寄存器地址" << address << "超出范围(0-65535)";
-        callback(-1);
-        return;
-    }
-    
-    qDebug() << "尝试读取寄存器 - 地址:" << address;
-    
-    // 创建读寄存器请求单元
-    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, address, 1);
-    
-    // 发送读请求并处理响应
-    if (auto *reply = modbusMaster->sendReadRequest(readUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, [reply, address, callback]() {
-                if (reply->error() != QModbusDevice::NoError) {
-                    qDebug() << "读取失败 - 地址:" << address 
-                             << "错误:" << reply->errorString() 
-                             << "错误代码:" << reply->error();
-                    
-                    // 详细输出Modbus异常代码
-                    if (reply->error() == QModbusDevice::ProtocolError) {
-                        auto modbusReply = qobject_cast<QModbusReply*>(reply);
-                        if (modbusReply && modbusReply->rawResult().isException()) {
-                            int exceptionCode = modbusReply->rawResult().exceptionCode();
-                            qDebug() << "Modbus异常代码:" << exceptionCode;
-                            switch (exceptionCode) {
-                                case 1: qDebug() << "异常说明: ILLEGAL FUNCTION (不支持的功能码)"; break;
-                                case 2: qDebug() << "异常说明: ILLEGAL DATA ADDRESS (无效的寄存器地址)"; break;
-                                case 3: qDebug() << "异常说明: ILLEGAL DATA VALUE (无效的寄存器值)"; break;
-                                case 4: qDebug() << "异常说明: SERVER DEVICE FAILURE (设备故障)"; break;
-                                case 5: qDebug() << "异常说明: ACKNOWLEDGE (确认，但需要时间)"; break;
-                                case 6: qDebug() << "异常说明: SERVER DEVICE BUSY (设备忙)"; break;
-                                case 7: qDebug() << "异常说明: MEMORY PARITY ERROR (内存校验错误)"; break;
-                                case 8: qDebug() << "异常说明: GATEWAY PATH UNAVAILABLE (网关路径不可用)"; break;
-                                case 9: qDebug() << "异常说明: GATEWAY TARGET FAILED (网关目标失败)"; break;
-                                default: qDebug() << "异常说明: 未知异常"; break;
-                            }
-                        }
-                    }
-                    callback(-1);
-                } else {
-                    QModbusDataUnit result = reply->result();
-                    int value = result.value(0);
-                    qDebug() << "读取成功 - 地址:" << address << "值:" << value;
-                    callback(value);
-                }
-                reply->deleteLater();
-            });
-        } else {
-            qDebug() << "读取失败 - 地址:" << address << "请求立即完成但无响应";
-            reply->deleteLater();
-            callback(-1);
-        }
-    } else {
-        qDebug() << "读取请求发送失败 - 地址:" << address 
-                 << "错误:" << modbusMaster->errorString();
-        callback(-1);
-    }
-}
+
+
+
 
 /**
  * @brief 刷新所有行的状态
@@ -390,7 +163,7 @@ void MainWindow::readRegister(int address, std::function<void(int)> callback)
 void MainWindow::refreshAllRows()
 {
     // 检查Modbus连接状态，避免在未连接时频繁输出错误
-    if (!modbusMaster || modbusMaster->state() != QModbusDevice::ConnectedState) {
+    if (!ModbusManager::instance()->isConnected()) {
         // 每5秒只输出一次连接状态提示，避免刷屏
         static QTimer *connectionTimer = nullptr;
         static bool showed = false;
@@ -412,7 +185,7 @@ void MainWindow::refreshAllRows()
     }
     
     // 检查Modbus连接是否稳定
-    if (!MainWindow::m_modbusStable) {
+    if (!ModbusManager::instance()->isStable()) {
         // 每3秒只输出一次连接稳定提示，避免刷屏
         static QTimer *stableTimer = nullptr;
         static bool stableShowed = false;
@@ -452,7 +225,7 @@ void MainWindow::refreshRow(int rowIndex)
     }
     
     // 读取寄存器（包含8个按钮的高8位状态）
-    readRegister(row->registerAddress, [row](int value) {
+    ModbusManager::instance()->readRegister(row->registerAddress, [row](int value) {
         if (value != -1) {
             int registerAddress = row->registerAddress;
             
@@ -506,12 +279,12 @@ void MainWindow::clearRow(int rowIndex)
     row->recentlyChangedRegisters.insert(row->registerAddress);
     
     // 读取寄存器的低8位（保持不变），将高8位置0
-    readRegister(row->registerAddress, [row](int lowValue) {
+    ModbusManager::instance()->readRegister(row->registerAddress, [row](int lowValue) {
         if (lowValue != -1) {
             // 保留低8位，高8位置0
             int newValue = (lowValue & 0x00FF) | 0x0000;
             
-            writeRegister(row->registerAddress, newValue);
+            ModbusManager::instance()->writeRegister(row->registerAddress, newValue);
         }
     });
     
@@ -563,15 +336,8 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
     if (MainWindow::m_serialPortOpen) {
         // 当前串口已打开，执行关闭操作
         
-        // 关闭串口
-        if (COM->isOpen()) {
-            COM->close();
-        }
-        
         // 关闭Modbus连接
-        if (modbusMaster && modbusMaster->state() == QModbusDevice::ConnectedState) {
-            modbusMaster->disconnectDevice();
-        }
+        ModbusManager::instance()->closeModbus();
         
         // 清除textBrowser显示的电压信息
         ui->textBrowser->clear();
@@ -600,82 +366,44 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
             return;
         }
         
-        // 配置串口参数（只配置，不打开）
-        COM->setPortName(portName);
-        COM->setBaudRate(QSerialPort::Baud9600);          // 波特率9600
-        COM->setDataBits(QSerialPort::Data8);              // 数据位8
-        COM->setStopBits(QSerialPort::OneStop);            // 停止位1
-        COM->setParity(QSerialPort::NoParity);             // 无校验位
-        
-        // 重新初始化Modbus（Modbus会自己打开串口）
-        if (modbusMaster && modbusMaster->state() == QModbusDevice::ConnectedState) {
-            modbusMaster->disconnectDevice();
-            delete modbusMaster;
+        // 初始化Modbus
+        bool success = ModbusManager::instance()->initModbus(portName, 9600);
+        if (success) {
+            // 更新状态标志
+            MainWindow::m_serialPortOpen = true;
+            
+            // 更新radioButton状态
+            ui->radioButton_checkOpen->setChecked(true);
+            
+            // 禁用串口下拉框选择
+            ui->comboBox_available_COM->setEnabled(false);
+            
+            // 更新按钮文字
+            ui->key_OpenOrClose_COM->setText("关闭串口");
+            
+            // 输出调试信息
+            qDebug() << "Modbus初始化 - 端口:" << portName << "波特率: 9600";
+        } else {
+            qDebug() << "Modbus初始化失败";
         }
-        initModbus();
-        
-        // 更新状态标志
-        MainWindow::m_serialPortOpen = true;
-        
-        // 更新radioButton状态
-        ui->radioButton_checkOpen->setChecked(true);
-        
-        // 禁用串口下拉框选择
-        ui->comboBox_available_COM->setEnabled(false);
-        
-        // 更新按钮文字
-        ui->key_OpenOrClose_COM->setText("关闭串口");
-        
-        // 输出调试信息
-        qDebug() << "Modbus初始化 - 端口:" << portName << "波特率: 9600";
     }
 }
 
-QModbusRtuSerialMaster *MainWindow::modbusMaster = nullptr;
-bool MainWindow::m_modbusStable = false;
+
 
 void MainWindow::readSlave3Register7()
 {
-    if (!modbusMaster) {
-        return;
-    }
-    
-    if (modbusMaster->state() != QModbusDevice::ConnectedState) {
-        return;
-    }
-    
-    // 检查Modbus连接是否稳定
-    if (!MainWindow::m_modbusStable) {
-        return;
-    }
-    
-    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, 7, 1);
-    
-    if (auto *reply = modbusMaster->sendReadRequest(readUnit, 3)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, [reply, this]() {
-                if (reply->error() != QModbusDevice::NoError) {
-                    reply->deleteLater();
-                    return;
-                }
-                
-                QModbusDataUnit result = reply->result();
-                int value = result.value(0);
-                
-                double voltage = value * 0.1;
-                
-                QString displayStr = QString("电压: %1 V").arg(voltage, 0, 'f', 1);
-                ui->textBrowser->setText(displayStr);
-                
-                // 更新波形图数据
-                updateWaveformData(voltage);
-                
-                reply->deleteLater();
-            });
-        } else {
-            reply->deleteLater();
+    ModbusManager::instance()->readSlave3Register7([this](int value) {
+        if (value != -1) {
+            double voltage = value * 0.1;
+            
+            QString displayStr = QString("电压: %1 V").arg(voltage, 0, 'f', 1);
+            ui->textBrowser->setText(displayStr);
+            
+            // 更新波形图数据
+            updateWaveformData(voltage);
         }
-    }
+    });
 }
 
 /**
