@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1159</width>
-    <height>925</height>
+    <height>776</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -2090,7 +2090,7 @@
      <string>电压波形图</string>
     </property>
    </widget>
-   <widget class="QWidget" name="voltageWaveformPage">
+   <widget class="QWidget" name="voltageWaveformPage" native="true">
     <property name="geometry">
      <rect>
       <x>0</x>

@@ -7,8 +7,142 @@
 #include "waveformchart.h"
 #include <QDebug>
 #include <QPainter>
+#include <QMouseEvent>
+#include <QEvent>
+#include <QApplication>
 
 constexpr int WaveformChart::MAX_DATA_POINTS;
+
+CustomChartView::CustomChartView(QChart *chart, QWidget *parent)
+    : QChartView(chart, parent)
+    , m_hoverPoint()
+{
+}
+
+QPointF CustomChartView::findClosestDataPoint(const QPoint &pos)
+{
+    QChart *chart = this->chart();
+    if (!chart) return QPointF();
+
+    QList<QAbstractSeries*> series = chart->series();
+    if (series.isEmpty()) return QPointF();
+
+    QLineSeries *lineSeries = qobject_cast<QLineSeries*>(series.first());
+    if (!lineSeries) return QPointF();
+
+    QPointF closestPoint;
+    double minDistance = 1e9;
+
+    QPointF valuePos = chart->mapToValue(chart->mapFromScene(mapToScene(pos)));
+
+    for (const QPointF &point : lineSeries->points()) {
+        double dx = valuePos.x() - point.x();
+        double dy = valuePos.y() - point.y();
+        double distance = sqrt(dx * dx + dy * dy);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestPoint = point;
+        }
+    }
+
+    return minDistance < 0.5 ? closestPoint : QPointF();
+}
+
+QString CustomChartView::formatToolTipText(const QPointF &dataPoint)
+{
+    QString text = QString("<b>时间:</b> %1 s<br>").arg(dataPoint.x(), 0, 'f', 0);
+    text += QString("<b>电压:</b> %2 V").arg(dataPoint.y(), 0, 'f', 3);
+    return text;
+}
+
+void CustomChartView::mouseMoveEvent(QMouseEvent *event)
+{
+    QPointF dataPoint = findClosestDataPoint(event->position().toPoint());
+    
+    bool updateNeeded = false;
+    if (dataPoint.isNull()) {
+        if (!m_hoverPoint.isNull()) {
+            m_hoverPoint = QPointF();
+            updateNeeded = true;
+        }
+        QToolTip::hideText();
+    } else {
+        if (m_hoverPoint.isNull() || !qFuzzyCompare(m_hoverPoint.x(), dataPoint.x()) || !qFuzzyCompare(m_hoverPoint.y(), dataPoint.y())) {
+            m_hoverPoint = dataPoint;
+            updateNeeded = true;
+        }
+        
+        QString toolTip = formatToolTipText(dataPoint);
+        
+        QPoint globalPos = mapToGlobal(event->position().toPoint());
+        
+        int xOffset = 15;
+        int yOffset = 15;
+        
+        if (globalPos.x() + xOffset + 150 > QApplication::primaryScreen()->availableGeometry().width()) {
+            xOffset = -165;
+        }
+        
+        if (globalPos.y() + yOffset + 60 > QApplication::primaryScreen()->availableGeometry().height()) {
+            yOffset = -65;
+        }
+        
+        QPoint toolTipPos = globalPos + QPoint(xOffset, yOffset);
+        QToolTip::showText(toolTipPos, toolTip, this);
+    }
+    
+    if (updateNeeded) {
+        update();
+    }
+
+    QChartView::mouseMoveEvent(event);
+}
+
+void CustomChartView::paintEvent(QPaintEvent *event)
+{
+    QChartView::paintEvent(event);
+    
+    if (!m_hoverPoint.isNull()) {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+        drawDataPointMarker(&painter, m_hoverPoint);
+    }
+}
+
+void CustomChartView::drawDataPointMarker(QPainter *painter, const QPointF &point)
+{
+    QChart *chart = this->chart();
+    if (!chart) return;
+    
+    QPointF scenePos = chart->mapToScene(chart->mapToValue(point));
+    QPointF widgetPos = mapFromScene(scenePos).toPointF();
+    
+    painter->save();
+    
+    QPen pen(Qt::red);
+    pen.setWidth(3);
+    painter->setPen(pen);
+    
+    int markerSize = 8;
+    painter->drawEllipse(widgetPos, markerSize, markerSize);
+    
+    QPen haloPen(Qt::white);
+    haloPen.setWidth(5);
+    painter->setPen(haloPen);
+    painter->drawEllipse(widgetPos, markerSize + 2, markerSize + 2);
+    
+    painter->restore();
+}
+
+void CustomChartView::leaveEvent(QEvent *event)
+{
+    QToolTip::hideText();
+    if (!m_hoverPoint.isNull()) {
+        m_hoverPoint = QPointF();
+        update();
+    }
+    QChartView::leaveEvent(event);
+}
 
 /**
  * @brief 构造函数
@@ -84,7 +218,7 @@ void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWid
     voltageChart = new QChart();
     voltageChart->setTitle(m_title);
     voltageChart->setAnimationOptions(QChart::NoAnimation);
-    voltageChart->setMargins(QMargins(10, 10, 10, 30));
+    voltageChart->setMargins(QMargins(10, 10, 10, 50));
     voltageChart->legend()->setVisible(true);
 
     voltageSeries = new QLineSeries();
@@ -105,11 +239,11 @@ void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWid
     voltageChart->addAxis(axisY, Qt::AlignLeft);
     voltageSeries->attachAxis(axisY);
 
-    chartView = new QChartView(voltageChart);
+    chartView = new CustomChartView(voltageChart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
     QRect containerRect = chartContainer->geometry();
-    QRect chartRect = containerRect.adjusted(30, 30, -30, -80);
+    QRect chartRect = containerRect.adjusted(30, 30, -30, -100);
     chartView->setGeometry(chartRect);
     chartView->setParent(pageWidget);
 

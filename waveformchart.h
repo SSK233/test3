@@ -15,6 +15,29 @@
 #include <QValueAxis>
 #include <QVector>
 #include <QTimer>
+#include <QToolTip>
+#include <QPoint>
+
+class CustomChartView : public QChartView
+{
+    Q_OBJECT
+
+public:
+    explicit CustomChartView(QChart *chart, QWidget *parent = nullptr);
+
+protected:
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    QPointF findClosestDataPoint(const QPoint &pos);
+    QString formatToolTipText(const QPointF &dataPoint);
+    void drawDataPointMarker(QPainter *painter, const QPointF &point);
+
+private:
+    QPointF m_hoverPoint;
+};
 
 class WaveformChart : public QObject
 {
@@ -108,7 +131,7 @@ private:
     QTimer *waveformUpdateTimer;
     QVector<double> voltageData;
     int m_dataPointCount;
-    static constexpr int MAX_DATA_POINTS = 500;
+    static constexpr int MAX_DATA_POINTS = 50;
     int m_updateInterval;
     double m_yAxisMin;
     double m_yAxisMax;
