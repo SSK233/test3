@@ -9,6 +9,7 @@
 #include "rowbuttongroup.h"
 #include "styles.h"
 #include "modbusmanager.h"
+#include "waveformchart.h"
 #include <limits.h>
 #include <QDebug>
 #include <QTimer>
@@ -135,7 +136,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->btnBackToMain->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
     
     // 初始化波形图
-    initVoltageWaveform();
+    m_waveformChart = new WaveformChart(this);
+    m_waveformChart->initVoltageWaveform(ui->chartContainer, ui->voltageWaveformPage);
     
     // 连接波形图按钮点击事件
     connect(ui->btnVoltageWaveform, &QPushButton::clicked, this, &MainWindow::switchToWaveformPage);
@@ -402,7 +404,7 @@ void MainWindow::readSlave3Register7()
             ui->textBrowser->setText(displayStr);
             
             // 更新波形图数据
-            updateWaveformData(voltage);
+            m_waveformChart->updateWaveformData(voltage);
         }
     });
 }
@@ -434,69 +436,6 @@ void MainWindow::resumeRefreshTimer()
 /**
  * @brief 初始化电压波形图
  */
-void MainWindow::initVoltageWaveform()
-{
-    // 初始化波形图数据
-    voltageData.reserve(MAX_DATA_POINTS);
-    dataPointCount = 0;
-    
-    // 设置波形图图表
-    setupWaveformChart();
-    
-    // 初始化波形图更新定时器
-    waveformUpdateTimer = new QTimer(this);
-    connect(waveformUpdateTimer, &QTimer::timeout, this, [this]() {
-        // 读取电压数据并更新波形图
-        readSlave3Register7();
-    });
-    
-    // 设置定时器间隔为1000ms（1Hz更新频率）
-    waveformUpdateTimer->setInterval(1000);
-}
-
-/**
- * @brief 设置波形图图表
- */
-void MainWindow::setupWaveformChart()
-{
-    // 创建图表
-    voltageChart = new QChart();
-    voltageChart->setTitle("电压实时波形图");
-    voltageChart->setAnimationOptions(QChart::NoAnimation);
-    voltageChart->setMargins(QMargins(10, 10, 10, 30)); // 调整边距，确保X轴有足够空间显示
-    voltageChart->legend()->setVisible(true);
-    
-    // 创建数据系列
-    voltageSeries = new QLineSeries();
-    voltageSeries->setName("电压 (V)");
-    voltageChart->addSeries(voltageSeries);
-    
-    // 创建坐标轴
-    QValueAxis *axisX = new QValueAxis();
-    axisX->setTitleText("时间 (s)");
-    axisX->setRange(0, MAX_DATA_POINTS); // 500个点，每个点1秒
-    voltageChart->addAxis(axisX, Qt::AlignBottom);
-    voltageSeries->attachAxis(axisX);
-    
-    QValueAxis *axisY = new QValueAxis();
-    axisY->setTitleText("电压 (V)");
-    axisY->setRange(228, 233); // 电压范围228-232
-    voltageChart->addAxis(axisY, Qt::AlignLeft);
-    voltageSeries->attachAxis(axisY);
-    
-    // 创建图表视图
-    chartView = new QChartView(voltageChart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    // 调整图表视图的大小，确保有足够空间显示X轴
-    QRect containerRect = ui->chartContainer->geometry();
-    QRect chartRect = containerRect.adjusted(30, 30, -30, -80); // 进一步增加内边距，底部留出更多空间给X轴
-    chartView->setGeometry(chartRect);
-    chartView->setParent(ui->voltageWaveformPage);
-    
-    // 设置图表容器的样式
-    ui->chartContainer->setStyleSheet("background-color: white;");
-}
-
 /**
  * @brief 切换到波形图页面
  */
@@ -538,7 +477,7 @@ void MainWindow::switchToWaveformPage()
     ui->voltageWaveformPage->setVisible(true);
     
     // 启动波形图更新定时器
-    waveformUpdateTimer->start();
+    m_waveformChart->startWaveformUpdate();
     
     qDebug() << "已切换到波形图页面";
 }
@@ -549,7 +488,7 @@ void MainWindow::switchToWaveformPage()
 void MainWindow::switchToMainPage()
 {
     // 停止波形图更新定时器
-    waveformUpdateTimer->stop();
+    m_waveformChart->stopWaveformUpdate();
     
     // 隐藏波形图页面
     ui->voltageWaveformPage->setVisible(false);
@@ -594,47 +533,3 @@ void MainWindow::switchToMainPage()
  * @brief 更新波形图数据
  * @param voltage 电压值
  */
-void MainWindow::updateWaveformData(double voltage)
-{
-    // 添加新数据点
-    voltageData.append(voltage);
-    dataPointCount++;
-    
-    // 限制数据点数量
-    if (voltageData.size() > MAX_DATA_POINTS) {
-        voltageData.removeFirst();
-    }
-    
-    // 更新波形图
-    voltageSeries->clear();
-    for (int i = 0; i < voltageData.size(); i++) {
-        voltageSeries->append(i, voltageData[i]); // X坐标是i秒
-    }
-    
-    // 计算电压数据的最大值和最小值
-    if (!voltageData.isEmpty()) {
-        double minVoltage = voltageData[0];
-        double maxVoltage = voltageData[0];
-        
-        for (double v : voltageData) {
-            if (v < minVoltage) minVoltage = v;
-            if (v > maxVoltage) maxVoltage = v;
-        }
-        
-        // 添加10%的余量，使图表更美观
-        double margin = (maxVoltage - minVoltage) * 0.1;
-        if (margin < 0.5) margin = 0.5; // 确保最小余量
-        
-        double newMin = minVoltage - margin;
-        double newMax = maxVoltage + margin;
-        
-        // 更新纵坐标范围
-        QValueAxis *axisY = qobject_cast<QValueAxis*>(voltageChart->axisY(voltageSeries));
-        if (axisY) {
-            axisY->setRange(newMin, newMax);
-        }
-    }
-    
-    // 更新图表
-    voltageChart->update();
-}

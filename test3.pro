@@ -12,12 +12,14 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     rowbuttongroup.cpp \
-    modbusmanager.cpp
+    modbusmanager.cpp \
+    waveformchart.cpp
 
 HEADERS += \
     mainwindow.h \
     rowbuttongroup.h \
-    modbusmanager.h
+    modbusmanager.h \
+    waveformchart.h
 
 FORMS += \
     mainwindow.ui

@@ -18,12 +18,9 @@
 #include <QRadioButton>
 #include <QTimer>
 #include <functional>
-#include <QChart>
-#include <QLineSeries>
-#include <QChartView>
-#include <QValueAxis>
 
 #include "rowbuttongroup.h"
+#include "waveformchart.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -90,15 +87,7 @@ private:
     static bool m_serialPortOpen;        // 串口状态标志
     QTimer *refreshTimer;                // 刷新定时器
     QTimer *slave3Timer;                 // 从机3定时器
-    
-    // 波形图相关成员变量
-    QChart *voltageChart;                // 电压波形图表
-    QLineSeries *voltageSeries;          // 电压数据系列
-    QChartView *chartView;               // 图表视图
-    QTimer *waveformUpdateTimer;         // 波形更新定时器
-    QVector<double> voltageData;         // 电压数据存储
-    int dataPointCount;                  // 数据点计数
-    static constexpr int MAX_DATA_POINTS = 500;  // 最大数据点数量
+    WaveformChart *m_waveformChart;
 
 public:
     /**
@@ -118,11 +107,6 @@ public:
     void readSlave3Register7();
     
     /**
-     * @brief 初始化电压波形图
-     */
-    void initVoltageWaveform();
-    
-    /**
      * @brief 切换到波形图页面
      */
     void switchToWaveformPage();
@@ -131,17 +115,6 @@ public:
      * @brief 切换到主页面
      */
     void switchToMainPage();
-    
-    /**
-     * @brief 更新波形图数据
-     * @param voltage 电压值
-     */
-    void updateWaveformData(double voltage);
-    
-    /**
-     * @brief 设置波形图图表
-     */
-    void setupWaveformChart();
     
     /**
      * @brief 清空指定行的数据
