@@ -155,6 +155,7 @@ WaveformChart::WaveformChart(QObject *parent)
     , chartView(nullptr)
     , waveformUpdateTimer(nullptr)
     , m_dataPointCount(0)
+    , m_currentTimeWindowStart(0.0)
     , m_updateInterval(1000)
     , m_yAxisMin(228.0)
     , m_yAxisMax(235.0)
@@ -261,13 +262,22 @@ void WaveformChart::updateWaveformData(double voltage)
 
     if (voltageData.size() > MAX_DATA_POINTS) {
         voltageData.removeFirst();
+        m_currentTimeWindowStart++;
     }
 
     if (voltageSeries) {
         voltageSeries->clear();
 
+        double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
         for (int i = 0; i < voltageData.size(); ++i) {
-            voltageSeries->append(i, voltageData[i]);
+            double time = m_currentTimeWindowStart + i;
+            voltageSeries->append(time, voltageData[i]);
+        }
+
+        QValueAxis *axisX = qobject_cast<QValueAxis*>(voltageChart->axisX(voltageSeries));
+        if (axisX) {
+            double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
+            axisX->setRange(m_currentTimeWindowStart, timeWindowEnd);
         }
     }
 
@@ -324,9 +334,15 @@ void WaveformChart::clearWaveformData()
 {
     voltageData.clear();
     m_dataPointCount = 0;
+    m_currentTimeWindowStart = 0.0;
 
     if (voltageSeries) {
         voltageSeries->clear();
+    }
+
+    QValueAxis *axisX = qobject_cast<QValueAxis*>(voltageChart->axisX());
+    if (axisX) {
+        axisX->setRange(0, MAX_DATA_POINTS);
     }
 }
 

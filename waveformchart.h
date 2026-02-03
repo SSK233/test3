@@ -132,6 +132,7 @@ private:
     QVector<double> voltageData;
     int m_dataPointCount;
     static constexpr int MAX_DATA_POINTS = 50;
+    double m_currentTimeWindowStart;
     int m_updateInterval;
     double m_yAxisMin;
     double m_yAxisMax;
