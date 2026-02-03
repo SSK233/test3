@@ -14,6 +14,10 @@
 #include <QRadioButton>
 #include <QTimer>
 #include <functional>
+#include <QChart>
+#include <QLineSeries>
+#include <QChartView>
+#include <QValueAxis>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -92,6 +96,15 @@ private:
     static QModbusRtuSerialMaster *modbusMaster;
     QTimer *refreshTimer;
     QTimer *slave3Timer;
+    
+    // 波形图相关
+    QChart *voltageChart;
+    QLineSeries *voltageSeries;
+    QChartView *chartView;
+    QTimer *waveformUpdateTimer;
+    QVector<double> voltageData;
+    int dataPointCount;
+    static constexpr int MAX_DATA_POINTS = 500;
 
 public:
     static bool m_modbusStable;    // Modbus连接稳定标志
@@ -100,6 +113,13 @@ public:
     void refreshAllRows();
     void refreshRow(int rowIndex);
     void readSlave3Register7();
+    
+    // 波形图相关方法
+    void initVoltageWaveform();
+    void switchToWaveformPage();
+    void switchToMainPage();
+    void updateWaveformData(double voltage);
+    void setupWaveformChart();
     
 public:
     static void writeRegister(int address, int value);

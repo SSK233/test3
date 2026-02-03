@@ -2072,6 +2072,65 @@
      </font>
     </property>
    </widget>
+   <widget class="QPushButton" name="btnVoltageWaveform">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>20</y>
+      <width>120</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>电压波形图</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="voltageWaveformPage">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1159</width>
+      <height>925</height>
+     </rect>
+    </property>
+    <property name="visible">
+     <bool>false</bool>
+    </property>
+    <widget class="QPushButton" name="btnBackToMain">
+     <property name="geometry">
+      <rect>
+       <x>1000</x>
+       <y>20</y>
+       <width>120</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>返回主界面</string>
+     </property>
+    </widget>
+    <widget class="QWidget" name="chartContainer" native="true">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>60</y>
+       <width>1120</width>
+       <height>840</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

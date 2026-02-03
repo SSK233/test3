@@ -511,6 +511,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 初始化时隐藏raiseEffect组件
     ui->raiseEffect->hide();
+    
+    // 为按钮设置样式
+    ui->btnVoltageWaveform->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
+    ui->btnBackToMain->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
+    
+    // 初始化波形图
+    initVoltageWaveform();
+    
+    // 连接波形图按钮点击事件
+    connect(ui->btnVoltageWaveform, &QPushButton::clicked, this, &MainWindow::switchToWaveformPage);
+    connect(ui->btnBackToMain, &QPushButton::clicked, this, &MainWindow::switchToMainPage);
 }
 
 /**
@@ -1042,6 +1053,9 @@ void MainWindow::readSlave3Register7()
                 QString displayStr = QString("电压: %1 V").arg(voltage, 0, 'f', 1);
                 ui->textBrowser->setText(displayStr);
                 
+                // 更新波形图数据
+                updateWaveformData(voltage);
+                
                 reply->deleteLater();
             });
         } else {
@@ -1072,4 +1086,188 @@ void MainWindow::resumeRefreshTimer()
         refreshTimer->start(1000);
         qDebug() << "定时刷新已恢复";
     }
+}
+
+/**
+ * @brief 初始化电压波形图
+ */
+void MainWindow::initVoltageWaveform()
+{
+    // 初始化波形图数据
+    voltageData.reserve(MAX_DATA_POINTS);
+    dataPointCount = 0;
+    
+    // 设置波形图图表
+    setupWaveformChart();
+    
+    // 初始化波形图更新定时器
+    waveformUpdateTimer = new QTimer(this);
+    connect(waveformUpdateTimer, &QTimer::timeout, this, [this]() {
+        // 读取电压数据并更新波形图
+        readSlave3Register7();
+    });
+    
+    // 设置定时器间隔为1000ms（1Hz更新频率）
+    waveformUpdateTimer->setInterval(1000);
+}
+
+/**
+ * @brief 设置波形图图表
+ */
+void MainWindow::setupWaveformChart()
+{
+    // 创建图表
+    voltageChart = new QChart();
+    voltageChart->setTitle("电压实时波形图");
+    voltageChart->setAnimationOptions(QChart::NoAnimation);
+    voltageChart->setMargins(QMargins(10, 10, 10, 30)); // 调整边距，确保X轴有足够空间显示
+    voltageChart->legend()->setVisible(true);
+    
+    // 创建数据系列
+    voltageSeries = new QLineSeries();
+    voltageSeries->setName("电压 (V)");
+    voltageChart->addSeries(voltageSeries);
+    
+    // 创建坐标轴
+    QValueAxis *axisX = new QValueAxis();
+    axisX->setTitleText("时间 (s)");
+    axisX->setRange(0, MAX_DATA_POINTS); // 500个点，每个点1秒
+    voltageChart->addAxis(axisX, Qt::AlignBottom);
+    voltageSeries->attachAxis(axisX);
+    
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setTitleText("电压 (V)");
+    axisY->setRange(228, 233); // 电压范围228-232
+    voltageChart->addAxis(axisY, Qt::AlignLeft);
+    voltageSeries->attachAxis(axisY);
+    
+    // 创建图表视图
+    chartView = new QChartView(voltageChart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+    // 调整图表视图的大小，确保有足够空间显示X轴
+    QRect containerRect = ui->chartContainer->geometry();
+    QRect chartRect = containerRect.adjusted(30, 30, -30, -80); // 进一步增加内边距，底部留出更多空间给X轴
+    chartView->setGeometry(chartRect);
+    chartView->setParent(ui->voltageWaveformPage);
+    
+    // 设置图表容器的样式
+    ui->chartContainer->setStyleSheet("background-color: white;");
+}
+
+/**
+ * @brief 切换到波形图页面
+ */
+void MainWindow::switchToWaveformPage()
+{
+    // 隐藏centralwidget中的所有子组件，保留centralwidget本身可见
+    ui->centralwidget->findChild<QWidget*>("topBar")->setVisible(false);
+    ui->centralwidget->findChild<QWidget*>("blurTransition")->setVisible(false);
+    
+    // 隐藏所有按钮，除了返回主界面的按钮
+    QList<QPushButton*> buttons = ui->centralwidget->findChildren<QPushButton*>();
+    for (QPushButton* btn : buttons) {
+        if (btn != ui->btnBackToMain) {
+            btn->setVisible(false);
+        }
+    }
+    
+    QList<QLineEdit*> lineEdits = ui->centralwidget->findChildren<QLineEdit*>();
+    for (QLineEdit* edit : lineEdits) {
+        edit->setVisible(false);
+    }
+    
+    QList<QLabel*> labels = ui->centralwidget->findChildren<QLabel*>();
+    for (QLabel* label : labels) {
+        label->setVisible(false);
+    }
+    
+    QList<QComboBox*> comboboxes = ui->centralwidget->findChildren<QComboBox*>();
+    for (QComboBox* box : comboboxes) {
+        box->setVisible(false);
+    }
+    
+    QList<QRadioButton*> radioButtons = ui->centralwidget->findChildren<QRadioButton*>();
+    for (QRadioButton* radio : radioButtons) {
+        radio->setVisible(false);
+    }
+    
+    // 显示波形图页面
+    ui->voltageWaveformPage->setVisible(true);
+    
+    // 启动波形图更新定时器
+    waveformUpdateTimer->start();
+    
+    qDebug() << "已切换到波形图页面";
+}
+
+/**
+ * @brief 切换到主界面
+ */
+void MainWindow::switchToMainPage()
+{
+    // 停止波形图更新定时器
+    waveformUpdateTimer->stop();
+    
+    // 隐藏波形图页面
+    ui->voltageWaveformPage->setVisible(false);
+    
+    // 显示centralwidget中的所有子组件
+    ui->centralwidget->findChild<QWidget*>("topBar")->setVisible(true);
+    ui->centralwidget->findChild<QWidget*>("blurTransition")->setVisible(true);
+    
+    // 显示所有按钮和输入框
+    QList<QPushButton*> buttons = ui->centralwidget->findChildren<QPushButton*>();
+    for (QPushButton* btn : buttons) {
+        btn->setVisible(true);
+    }
+    
+    QList<QLineEdit*> lineEdits = ui->centralwidget->findChildren<QLineEdit*>();
+    for (QLineEdit* edit : lineEdits) {
+        edit->setVisible(true);
+    }
+    
+    QList<QLabel*> labels = ui->centralwidget->findChildren<QLabel*>();
+    for (QLabel* label : labels) {
+        label->setVisible(true);
+    }
+    
+    QList<QComboBox*> comboboxes = ui->centralwidget->findChildren<QComboBox*>();
+    for (QComboBox* box : comboboxes) {
+        box->setVisible(true);
+    }
+    
+    QList<QRadioButton*> radioButtons = ui->centralwidget->findChildren<QRadioButton*>();
+    for (QRadioButton* radio : radioButtons) {
+        radio->setVisible(true);
+    }
+    
+    // 确保textBrowser可见
+    ui->textBrowser->setVisible(true);
+    
+    qDebug() << "已切换到主界面";
+}
+
+/**
+ * @brief 更新波形图数据
+ * @param voltage 电压值
+ */
+void MainWindow::updateWaveformData(double voltage)
+{
+    // 添加新数据点
+    voltageData.append(voltage);
+    dataPointCount++;
+    
+    // 限制数据点数量
+    if (voltageData.size() > MAX_DATA_POINTS) {
+        voltageData.removeFirst();
+    }
+    
+    // 更新波形图
+    voltageSeries->clear();
+    for (int i = 0; i < voltageData.size(); i++) {
+        voltageSeries->append(i, voltageData[i]); // X坐标是i秒
+    }
+    
+    // 更新图表
+    voltageChart->update();
 }
