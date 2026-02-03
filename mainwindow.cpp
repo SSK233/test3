@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "RowButtonGroup.h"
+#include "rowbuttongroup.h"
 #include "styles.h"
 #include "modbusmanager.h"
 #include <limits.h>

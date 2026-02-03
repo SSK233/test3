@@ -11,12 +11,12 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    RowButtonGroup.cpp \
+    rowbuttongroup.cpp \
     modbusmanager.cpp
 
 HEADERS += \
     mainwindow.h \
-    RowButtonGroup.h \
+    rowbuttongroup.h \
     modbusmanager.h
 
 FORMS += \

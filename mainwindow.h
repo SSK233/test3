@@ -17,7 +17,7 @@
 #include <QChartView>
 #include <QValueAxis>
 
-#include "RowButtonGroup.h"
+#include "rowbuttongroup.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
