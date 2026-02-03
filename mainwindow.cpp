@@ -142,6 +142,9 @@ MainWindow::MainWindow(QWidget *parent)
     // 连接波形图按钮点击事件
     connect(ui->btnVoltageWaveform, &QPushButton::clicked, this, &MainWindow::switchToWaveformPage);
     connect(ui->btnBackToMain, &QPushButton::clicked, this, &MainWindow::switchToMainPage);
+
+    // 设置窗口最小尺寸为初始尺寸，确保只能放大不能缩小
+    this->setMinimumSize(this->size());
 }
 
 /**
@@ -441,8 +444,7 @@ void MainWindow::resumeRefreshTimer()
  */
 void MainWindow::switchToWaveformPage()
 {
-    // 隐藏centralwidget中的所有子组件，保留centralwidget本身可见
-    ui->centralwidget->findChild<QWidget*>("topBar")->setVisible(false);
+    // 隐藏blurTransition，但保留topBar可见（因为raiseEffect在topBar中）
     ui->centralwidget->findChild<QWidget*>("blurTransition")->setVisible(false);
     
     // 隐藏所有按钮，除了返回主界面的按钮
