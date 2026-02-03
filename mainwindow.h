@@ -92,6 +92,9 @@ private:
     static QModbusRtuSerialMaster *modbusMaster;
     QTimer *refreshTimer;
     QTimer *slave3Timer;
+
+public:
+    static bool m_modbusStable;    // Modbus连接稳定标志
     
     void initModbus();
     void refreshAllRows();

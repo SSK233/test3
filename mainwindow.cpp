@@ -132,6 +132,14 @@ void RowButtonGroup::onButtonClicked()
             
             qDebug() << "按钮状态编码完成，准备读取寄存器低8位 - registerValue:" << registerValue;
             
+            // 检查Modbus连接是否稳定
+            if (!MainWindow::m_modbusStable) {
+                qDebug() << "Modbus连接尚未稳定，等待后再尝试操作";
+                recentlyChangedRegisters.remove(registerAddress);
+                mainWindow->resumeRefreshTimer();
+                return;
+            }
+            
             mainWindow->readRegister(registerAddress, [this, registerValue](int lowValue) {
                 qDebug() << "读取寄存器回调 - lowValue:" << lowValue << "registerValue:" << registerValue;
                 if (lowValue != -1) {
@@ -418,8 +426,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readSlave3Register7);
     slave3Timer->start(1000);  // 每1秒读取一次
 
-    // 等待Modbus连接建立后立即刷新一次
-    QTimer::singleShot(100, this, &MainWindow::refreshAllRows);
+    // 等待Modbus连接建立并稳定后再开始刷新
+    // 不再使用提前刷新，而是通过refreshTimer定期刷新
     
     // 初始化串口状态
     MainWindow::m_serialPortOpen = false;
@@ -560,11 +568,11 @@ void MainWindow::initModbus()
     modbusMaster->setConnectionParameter(QModbusDevice::SerialParityParameter, COM->parity());
     modbusMaster->setConnectionParameter(QModbusDevice::SerialStopBitsParameter, COM->stopBits());
     
-    // 设置超时时间（毫秒）
-    modbusMaster->setTimeout(200);
+    // 设置超时时间（毫秒）- 增加到500ms以提高稳定性
+    modbusMaster->setTimeout(400);
     
-    // 设置重试次数
-    modbusMaster->setNumberOfRetries(0);
+    // 设置重试次数 - 增加到2次重试
+    modbusMaster->setNumberOfRetries(1);
     
     // 建立Modbus连接
     if (!modbusMaster->connectDevice()) {
@@ -581,6 +589,13 @@ void MainWindow::initModbus()
     
     if (modbusMaster->state() == QModbusDevice::ConnectedState) {
         qDebug() << "Modbus连接成功 - 端口:" << COM->portName() << ", 波特率:" << COM->baudRate();
+        // 重置连接稳定标志
+        MainWindow::m_modbusStable = false;
+        // 延迟2秒后标记连接稳定，给设备足够的初始化时间
+        QTimer::singleShot(500, this, []() {
+            MainWindow::m_modbusStable = true;
+            qDebug() << "Modbus连接已稳定，可以开始正常通信";
+        });
     } else {
         qDebug() << "Modbus连接超时 - 最终状态:" << modbusMaster->state();
         delete modbusMaster;
@@ -767,6 +782,28 @@ void MainWindow::refreshAllRows()
             qDebug() << "等待Modbus连接...";
             showed = true;
             connectionTimer->start(5000);
+        }
+        return;
+    }
+    
+    // 检查Modbus连接是否稳定
+    if (!MainWindow::m_modbusStable) {
+        // 每3秒只输出一次连接稳定提示，避免刷屏
+        static QTimer *stableTimer = nullptr;
+        static bool stableShowed = false;
+        
+        if (!stableTimer) {
+            stableTimer = new QTimer();
+            stableTimer->setSingleShot(true);
+            connect(stableTimer, &QTimer::timeout, []() {
+                stableShowed = false;
+            });
+        }
+        
+        if (!stableShowed) {
+            qDebug() << "Modbus连接已建立，等待设备稳定...";
+            stableShowed = true;
+            stableTimer->start(3000);
         }
         return;
     }
@@ -970,6 +1007,7 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
 }
 
 QModbusRtuSerialMaster *MainWindow::modbusMaster = nullptr;
+bool MainWindow::m_modbusStable = false;
 
 void MainWindow::readSlave3Register7()
 {
@@ -978,6 +1016,11 @@ void MainWindow::readSlave3Register7()
     }
     
     if (modbusMaster->state() != QModbusDevice::ConnectedState) {
+        return;
+    }
+    
+    // 检查Modbus连接是否稳定
+    if (!MainWindow::m_modbusStable) {
         return;
     }
     
