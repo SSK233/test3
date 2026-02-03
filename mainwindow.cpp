@@ -148,6 +148,23 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 /**
+ * @brief 处理窗口大小变化事件
+ * @param event 大小变化事件
+ * @details 当窗口大小变化时，调整topBar和blurTransition的宽度以适应窗口宽度
+ */
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+    
+    // 调整topBar宽度以适应窗口宽度
+    int newWidth = this->width();
+    ui->topBar->setGeometry(0, 0, newWidth, ui->topBar->height());
+    
+    // 调整blurTransition宽度以适应窗口宽度
+    ui->blurTransition->setGeometry(0, ui->blurTransition->y(), newWidth, ui->blurTransition->height());
+}
+
+/**
  * @brief 处理textBrowser文本变化事件
  * @details 当textBrowser有文字时显示raiseEffect组件，没有文字时隐藏
  */

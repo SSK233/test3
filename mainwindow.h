@@ -17,6 +17,7 @@
 #include <QComboBox>
 #include <QRadioButton>
 #include <QTimer>
+#include <QResizeEvent>
 #include <functional>
 
 #include "rowbuttongroup.h"
@@ -52,6 +53,13 @@ constexpr int REGISTER_ADDRESS_ROW8 = 8;   // 第8行对应的寄存器地址
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
+protected:
+    /**
+     * @brief 处理窗口大小变化事件
+     * @param event 大小变化事件
+     */
+    void resizeEvent(QResizeEvent *event) override;
 
 public:
     /**
