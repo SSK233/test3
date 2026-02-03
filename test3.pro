@@ -10,10 +10,12 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    RowButtonGroup.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    RowButtonGroup.h
 
 FORMS += \
     mainwindow.ui
