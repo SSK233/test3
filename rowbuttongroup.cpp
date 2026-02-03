@@ -1,4 +1,5 @@
 #include "RowButtonGroup.h"
+#include "mainwindow.h"
 #include "styles.h"
 #include <QDebug>
 #include <QTimer>

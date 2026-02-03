@@ -882,6 +882,30 @@ void MainWindow::updateWaveformData(double voltage)
         voltageSeries->append(i, voltageData[i]); // X坐标是i秒
     }
     
+    // 计算电压数据的最大值和最小值
+    if (!voltageData.isEmpty()) {
+        double minVoltage = voltageData[0];
+        double maxVoltage = voltageData[0];
+        
+        for (double v : voltageData) {
+            if (v < minVoltage) minVoltage = v;
+            if (v > maxVoltage) maxVoltage = v;
+        }
+        
+        // 添加10%的余量，使图表更美观
+        double margin = (maxVoltage - minVoltage) * 0.1;
+        if (margin < 0.5) margin = 0.5; // 确保最小余量
+        
+        double newMin = minVoltage - margin;
+        double newMax = maxVoltage + margin;
+        
+        // 更新纵坐标范围
+        QValueAxis *axisY = qobject_cast<QValueAxis*>(voltageChart->axisY(voltageSeries));
+        if (axisY) {
+            axisY->setRange(newMin, newMax);
+        }
+    }
+    
     // 更新图表
     voltageChart->update();
 }
