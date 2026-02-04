@@ -219,7 +219,7 @@ void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWid
     voltageChart = new QChart();
     voltageChart->setTitle(m_title);
     voltageChart->setAnimationOptions(QChart::NoAnimation);
-    voltageChart->setMargins(QMargins(10, 10, 10, 50));
+    voltageChart->setMargins(QMargins(10, 10, 10, 30));
     voltageChart->legend()->setVisible(true);
 
     voltageSeries = new QLineSeries();
@@ -244,7 +244,7 @@ void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWid
     chartView->setRenderHint(QPainter::Antialiasing);
 
     QRect containerRect = chartContainer->geometry();
-    QRect chartRect = containerRect.adjusted(30, 30, -30, -100);
+    QRect chartRect = containerRect.adjusted(30, 30, -30, -30);
     chartView->setGeometry(chartRect);
     chartView->setParent(pageWidget);
 
@@ -426,5 +426,18 @@ void WaveformChart::setTitle(const QString &title)
 
     if (voltageChart) {
         voltageChart->setTitle(title);
+    }
+}
+
+/**
+ * @brief 更新图表大小，使其与容器大小保持同步
+ * @param chartContainer 图表容器
+ */
+void WaveformChart::updateChartSize(QWidget *chartContainer)
+{
+    if (chartView && chartContainer) {
+        QRect containerRect = chartContainer->geometry();
+        QRect chartRect = containerRect.adjusted(30, 30, -30, -60);
+        chartView->setGeometry(chartRect);
     }
 }

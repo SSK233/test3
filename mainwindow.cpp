@@ -113,8 +113,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btnVoltageWaveform, &QPushButton::clicked, this, &MainWindow::switchToWaveformPage);
     connect(ui->btnBackToMain, &QPushButton::clicked, this, &MainWindow::switchToMainPage);
 
-    // 设置窗口最小尺寸为初始尺寸，确保只能放大不能缩小
-    this->setMinimumSize(this->size());
+    // 设置窗口最小尺寸为能显示所有按钮的最小尺寸
+    // 基于UI布局计算，确保所有控件都能正常显示
+    this->setMinimumSize(1000, 600);
 }
 
 /**
@@ -128,6 +129,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     
     // 调整topBar宽度以适应窗口宽度
     int newWidth = this->width();
+    int newHeight = this->height();
     ui->topBar->setGeometry(0, 0, newWidth, ui->topBar->height());
     
     // 调整blurTransition宽度以适应窗口宽度
@@ -157,6 +159,38 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     ui->radioButton_checkOpen->setGeometry(newX_radioButton, ui->radioButton_checkOpen->y(), ui->radioButton_checkOpen->width(), ui->radioButton_checkOpen->height());
     ui->label_19->setGeometry(newX_label, ui->label_19->y(), ui->label_19->width(), ui->label_19->height());
     ui->btnVoltageWaveform->setGeometry(newX_btnVoltage, ui->btnVoltageWaveform->y(), ui->btnVoltageWaveform->width(), ui->btnVoltageWaveform->height());
+    
+    // 调整波形图页面大小以适应窗口大小
+    ui->voltageWaveformPage->setGeometry(0, 0, newWidth, newHeight);
+    
+    // 调整btnBackToMain按钮的位置，保持距离右边框的距离固定
+    int fixedRightMargin_btnBackToMain = 1159 - 1000 - 120; // 120是btnBackToMain的宽度
+    int newX_btnBackToMain = newWidth - fixedRightMargin_btnBackToMain - 120;
+    ui->btnBackToMain->setGeometry(newX_btnBackToMain, ui->btnBackToMain->y(), ui->btnBackToMain->width(), ui->btnBackToMain->height());
+    
+    // 调整图表容器大小，使其随界面大小变化而变化并居中
+    // 计算图表容器的新大小，距离blurTransition有10像素距离
+    int chartContainerTop = ui->blurTransition->y() + ui->blurTransition->height() + 10;
+    int chartContainerHeight = newHeight - chartContainerTop - 40; // 底部留40像素边距
+    int chartContainerWidth = newWidth - 40; // 左右各留20像素边距
+    
+    // 确保图表容器大小合理
+    if (chartContainerWidth < 200) chartContainerWidth = 200;
+    if (chartContainerHeight < 200) chartContainerHeight = 200;
+    
+    // 计算图表容器的x坐标，使其水平居中
+    int chartContainerX = (newWidth - chartContainerWidth) / 2;
+    
+    // 应用图表容器的新位置和大小
+    QWidget *chartContainer = ui->voltageWaveformPage->findChild<QWidget*>("chartContainer");
+    if (chartContainer) {
+        chartContainer->setGeometry(chartContainerX, chartContainerTop, chartContainerWidth, chartContainerHeight);
+        
+        // 更新图表大小，使其与容器大小保持同步
+        if (m_waveformChart) {
+            m_waveformChart->updateChartSize(chartContainer);
+        }
+    }
 }
 /**
  * @brief 处理textBrowser文本变化事件

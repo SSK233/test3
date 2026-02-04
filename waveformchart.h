@@ -109,6 +109,12 @@ public:
      */
     void setTitle(const QString &title);
 
+    /**
+     * @brief 更新图表大小，使其与容器大小保持同步
+     * @param chartContainer 图表容器
+     */
+    void updateChartSize(QWidget *chartContainer);
+
 signals:
     /**
      * @brief 波形图数据更新信号
