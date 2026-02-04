@@ -191,6 +191,31 @@ void MainWindow::resizeEvent(QResizeEvent *event)
             m_waveformChart->updateChartSize(chartContainer);
         }
     }
+    
+    // 调整中间按钮组的位置，使它们整体居中
+    // 计算按钮组的总宽度和起始位置
+    int buttonGroupStartX = 240; // 第一个按钮btn_1的初始x坐标
+    int buttonGroupEndX = 820 + 60; // 最后一个按钮pushButton_2的初始右边缘
+    int buttonGroupWidth = buttonGroupEndX - buttonGroupStartX;
+    
+    // 计算新的按钮组起始x坐标，使其水平居中
+    int newButtonGroupStartX = (newWidth - buttonGroupWidth) / 2;
+    
+    // 计算x坐标偏移量
+    int xOffset = newButtonGroupStartX - buttonGroupStartX;
+    
+    // 调整所有中间按钮和相关控件的位置，使用固定的初始位置作为基准
+    ui->btn_1->setGeometry(240 + xOffset, ui->btn_1->y(), ui->btn_1->width(), ui->btn_1->height());
+    ui->btn_2->setGeometry(290 + xOffset, ui->btn_2->y(), ui->btn_2->width(), ui->btn_2->height());
+    ui->btn_4->setGeometry(340 + xOffset, ui->btn_4->y(), ui->btn_4->width(), ui->btn_4->height());
+    ui->btn_8->setGeometry(390 + xOffset, ui->btn_8->y(), ui->btn_8->width(), ui->btn_8->height());
+    ui->btn_16->setGeometry(440 + xOffset, ui->btn_16->y(), ui->btn_16->width(), ui->btn_16->height());
+    ui->btn_32->setGeometry(490 + xOffset, ui->btn_32->y(), ui->btn_32->width(), ui->btn_32->height());
+    ui->btn_64->setGeometry(540 + xOffset, ui->btn_64->y(), ui->btn_64->width(), ui->btn_64->height());
+    ui->lineEditSum->setGeometry(610 + xOffset, ui->lineEditSum->y(), ui->lineEditSum->width(), ui->lineEditSum->height());
+    ui->label_10->setGeometry(680 + xOffset, ui->label_10->y(), ui->label_10->width(), ui->label_10->height());
+    ui->pushButton_load->setGeometry(730 + xOffset, ui->pushButton_load->y(), ui->pushButton_load->width(), ui->pushButton_load->height());
+    ui->pushButton_2->setGeometry(820 + xOffset, ui->pushButton_2->y(), ui->pushButton_2->width(), ui->pushButton_2->height());
 }
 /**
  * @brief 处理textBrowser文本变化事件
