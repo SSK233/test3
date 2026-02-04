@@ -120,7 +120,7 @@ void RowButtonGroup::onButtonClicked()
                 
                 int registerValue = 0;
                 for (int i = 0; i < BUTTON_COUNT; ++i) {
-                    registerValue |= (states[i] ? 1 : 0) << (8 + i);
+                    registerValue |= (states[i] ? 1 : 0) << i;
                 }
                 
                 recentlyChangedRegisters.insert(registerAddress);
@@ -134,10 +134,10 @@ void RowButtonGroup::onButtonClicked()
                     return;
                 }
                 
-                ModbusManager::instance()->readRegister(registerAddress, [this, registerValue](int lowValue) {
-                    qDebug() << "读取寄存器回调 - lowValue:" << lowValue << "registerValue:" << registerValue;
-                    if (lowValue != -1) {
-                        int newValue = (lowValue & 0x00FF) | (registerValue & 0xFF00);
+                ModbusManager::instance()->readRegister(registerAddress, [this, registerValue](int value) {
+                    qDebug() << "读取寄存器回调 - value:" << value << "registerValue:" << registerValue;
+                    if (value != -1) {
+                        int newValue = (value & 0xFF00) | (registerValue & 0x00FF);
                         
                         qDebug() << "准备写入寄存器 - 地址:" << registerAddress << "新值:" << newValue;
                         
@@ -148,7 +148,7 @@ void RowButtonGroup::onButtonClicked()
                         
                         this->mainWindow->resumeRefreshTimer();
                     } else {
-                        qDebug() << "读取寄存器失败，lowValue为-1";
+                        qDebug() << "读取寄存器失败，value为-1";
                         recentlyChangedRegisters.remove(registerAddress);
                         this->mainWindow->resumeRefreshTimer();
                     }
@@ -245,14 +245,14 @@ void RowButtonGroup::onLoadButtonClicked()
         
         int registerValue = 0;
         for (int i = 0; i < BUTTON_COUNT; ++i) {
-            registerValue |= (states[i] ? 1 : 0) << (8 + i);
+            registerValue |= (states[i] ? 1 : 0) << i;
         }
         
         recentlyChangedRegisters.insert(registerAddress);
         
-        ModbusManager::instance()->readRegister(registerAddress, [this, registerValue](int lowValue) {
-            if (lowValue != -1) {
-                int newValue = (lowValue & 0x00FF) | (registerValue & 0xFF00);
+        ModbusManager::instance()->readRegister(registerAddress, [this, registerValue](int value) {
+            if (value != -1) {
+                int newValue = (value & 0xFF00) | (registerValue & 0x00FF);
                 
                 ModbusManager::instance()->writeRegister(registerAddress, newValue);
             }
@@ -273,9 +273,9 @@ void RowButtonGroup::onLoadButtonClicked()
         
         recentlyChangedRegisters.insert(registerAddress);
         
-        ModbusManager::instance()->readRegister(registerAddress, [this](int lowValue) {
-            if (lowValue != -1) {
-                int newValue = (lowValue & 0x00FF) | 0x0000;
+        ModbusManager::instance()->readRegister(registerAddress, [this](int value) {
+            if (value != -1) {
+                int newValue = (value & 0xFF00) | 0x0000;
                 
                 ModbusManager::instance()->writeRegister(registerAddress, newValue);
             }

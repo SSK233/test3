@@ -303,9 +303,9 @@ void ModbusManager::readSlave3Register7(std::function<void(int)> callback)
         return;
     }
     
-    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, 7, 1);
+    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, VOLTAGE_REGISTER_ADDRESS, 1);
     
-    if (auto *reply = modbusMaster->sendReadRequest(readUnit, 3)) {
+    if (auto *reply = modbusMaster->sendReadRequest(readUnit, VOLTAGE_SLAVE_ADDRESS)) {
         if (!reply->isFinished()) {
             connect(reply, &QModbusReply::finished, this, [reply, callback]() {
                 if (reply->error() != QModbusDevice::NoError) {

@@ -13,6 +13,13 @@
 #include <functional>
 
 /**
+ * @brief 电压读取相关常量定义
+ * @details 定义读取电压数据的Modbus配置
+ */
+constexpr int VOLTAGE_SLAVE_ADDRESS = 3;      // 电压数据的从站地址
+constexpr int VOLTAGE_REGISTER_ADDRESS = 7;   // 电压数据的寄存器地址
+
+/**
  * @class ModbusManager
  * @brief Modbus通信管理类
  * @details 负责Modbus RTU串行通信的初始化、读写寄存器、连接状态管理等功能，使用单例模式

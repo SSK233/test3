@@ -323,10 +323,10 @@ void MainWindow::refreshRow(int rowIndex)
             if (row->recentlyChangedRegisters.contains(registerAddress)) {
                 qDebug() << "寄存器" << registerAddress << "在缓冲区中，保留本地状态";
             } else {
-                // 从寄存器的高8位提取按钮的状态
+                // 从寄存器的低8位提取按钮的状态
                 row->m_isUpdating = true;
                 for (int i = 0; i < BUTTON_COUNT; ++i) {
-                    int bitPosition = 8 + i;
+                    int bitPosition = i;
                     row->states[i] = (value >> bitPosition) & 0x0001;
                 }
                 row->applyButtonStatesToUI();
@@ -364,11 +364,11 @@ void MainWindow::clearRow(int rowIndex)
     // 将寄存器加入状态变更缓冲区
     row->recentlyChangedRegisters.insert(row->registerAddress);
     
-    // 读取寄存器的低8位（保持不变），将高8位置0
-    ModbusManager::instance()->readRegister(row->registerAddress, [row](int lowValue) {
-        if (lowValue != -1) {
-            // 保留低8位，高8位置0
-            int newValue = (lowValue & 0x00FF) | 0x0000;
+    // 读取寄存器的高8位（保持不变），将低8位置0
+    ModbusManager::instance()->readRegister(row->registerAddress, [row](int value) {
+        if (value != -1) {
+            // 保留高8位，低8位置0
+            int newValue = (value & 0xFF00) | 0x0000;
             
             ModbusManager::instance()->writeRegister(row->registerAddress, newValue);
         }
