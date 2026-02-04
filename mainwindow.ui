@@ -246,7 +246,7 @@
      </font>
     </property>
     <property name="text">
-     <string>KW</string>
+     <string>A</string>
     </property>
    </widget>
    <widget class="QComboBox" name="comboBox_available_COM">

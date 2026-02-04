@@ -36,14 +36,6 @@ class MainWindow;
  * @details 定义各行列对应的Modbus寄存器地址
  */
 constexpr int REGISTER_ADDRESS_ROW0 = 50;  // 第0行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW1 = 1;   // 第1行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW2 = 2;   // 第2行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW3 = 3;   // 第3行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW4 = 4;   // 第4行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW5 = 5;   // 第5行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW6 = 6;   // 第6行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW7 = 7;   // 第7行对应的寄存器地址
-constexpr int REGISTER_ADDRESS_ROW8 = 8;   // 第8行对应的寄存器地址
 
 /**
  * @class MainWindow
@@ -91,7 +83,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;                  // UI界面指针
-    RowButtonGroup row0, row1, row2, row3, row4, row5, row6, row7, row8;  // 行按钮组对象
+    RowButtonGroup row0;                 // 行按钮组对象
     static bool m_serialPortOpen;        // 串口状态标志
     QTimer *refreshTimer;                // 刷新定时器
     QTimer *slave3Timer;                 // 从机3定时器

@@ -57,29 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
     // 初始化第0行（第一行）
     row0.initialize(ui->btn_0_1, ui->btn_0_2, ui->btn_0_2_2, ui->btn_0_5, ui->btn_1, ui->btn_2, ui->btn_2_2, ui->btn_5, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0);
 
-    // 初始化第1行
-    row1.initialize(ui->btn1_0_1, ui->btn1_0_2, ui->btn1_0_2_2, ui->btn1_0_5, ui->btn1_1, ui->btn1_2, ui->btn1_2_2, ui->btn1_5, ui->lineEditSum1, this, 1, REGISTER_ADDRESS_ROW1);
 
-    // 初始化第2行
-    row2.initialize(ui->btn2_0_1, ui->btn2_0_2, ui->btn2_0_2_2, ui->btn2_0_5, ui->btn2_1, ui->btn2_2, ui->btn2_2_2, ui->btn2_5, ui->lineEditSum2, this, 2, REGISTER_ADDRESS_ROW2);
-
-    // 初始化第3行
-    row3.initialize(ui->btn3_0_1, ui->btn3_0_2, ui->btn3_0_2_2, ui->btn3_0_5, ui->btn3_1, ui->btn3_2, ui->btn3_2_2, ui->btn3_5, ui->lineEditSum3, this, 3, REGISTER_ADDRESS_ROW3);
-
-    // 初始化第4行
-    row4.initialize(ui->btn4_0_1, ui->btn4_0_2, ui->btn4_0_2_2, ui->btn4_0_5, ui->btn4_1, ui->btn4_2, ui->btn4_2_2, ui->btn4_5, ui->lineEditSum4, this, 4, REGISTER_ADDRESS_ROW4);
-
-    // 初始化第5行
-    row5.initialize(ui->btn5_0_1, ui->btn5_0_2, ui->btn5_0_2_2, ui->btn5_0_5, ui->btn5_1, ui->btn5_2, ui->btn5_2_2, ui->btn5_5, ui->lineEditSum5, this, 5, REGISTER_ADDRESS_ROW5);
-
-    // 初始化第6行
-    row6.initialize(ui->btn6_0_1, ui->btn6_0_2, ui->btn6_0_2_2, ui->btn6_0_5, ui->btn6_1, ui->btn6_2, ui->btn6_2_2, ui->btn6_5, ui->lineEditSum6, this, 6, REGISTER_ADDRESS_ROW6);
-
-    // 初始化第7行
-    row7.initialize(ui->btn7_0_1, ui->btn7_0_2, ui->btn7_0_2_2, ui->btn7_0_5, ui->btn7_1, ui->btn7_2, ui->btn7_2_2, ui->btn7_5, ui->lineEditSum7, this, 7, REGISTER_ADDRESS_ROW7);
-
-    // 初始化第8行（第九行）
-    row8.initialize(ui->btn8_0_1, ui->btn8_0_2, ui->btn8_0_2_2, ui->btn8_0_5, ui->btn8_1, ui->btn8_2, ui->btn8_2_2, ui->btn8_5, ui->lineEditSum8, this, 8, REGISTER_ADDRESS_ROW8);
 
     // 为所有"载入"和"卸载"按钮应用样式
     QList<QPushButton*> pushButtons = this->findChildren<QPushButton*>();
@@ -116,14 +94,6 @@ MainWindow::MainWindow(QWidget *parent)
     
     // 连接卸载按钮点击事件
     connect(ui->pushButton_2, &QPushButton::clicked, this, [this]() { clearRow(0); });
-    connect(ui->pushButton_11, &QPushButton::clicked, this, [this]() { clearRow(1); });
-    connect(ui->pushButton_12, &QPushButton::clicked, this, [this]() { clearRow(2); });
-    connect(ui->pushButton_13, &QPushButton::clicked, this, [this]() { clearRow(3); });
-    connect(ui->pushButton_14, &QPushButton::clicked, this, [this]() { clearRow(4); });
-    connect(ui->pushButton_15, &QPushButton::clicked, this, [this]() { clearRow(5); });
-    connect(ui->pushButton_16, &QPushButton::clicked, this, [this]() { clearRow(6); });
-    connect(ui->pushButton_17, &QPushButton::clicked, this, [this]() { clearRow(7); });
-    connect(ui->pushButton_18, &QPushButton::clicked, this, [this]() { clearRow(8); });
 
     // 连接textBrowser文本变化事件
     connect(ui->textBrowser, &QTextBrowser::textChanged, this, &MainWindow::on_textBrowser_textChanged);
