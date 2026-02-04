@@ -92,6 +92,8 @@ private:
     QVector<QPushButton*> buttons;          // 按钮数组
     QVector<double> values;                 // 按钮对应的值数组
     MainWindow *mainWindow;                 // 主窗口指针
+    QTimer *debounceTimer;                  // 按钮防抖定时器
+    bool isDebouncing;                      // 是否处于防抖状态
 
     /**
      * @brief 根据目标和值求解按钮状态

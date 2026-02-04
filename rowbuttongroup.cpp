@@ -21,7 +21,7 @@
  * @details 初始化成员变量，创建编辑计时器并设置信号槽连接
  */
 RowButtonGroup::RowButtonGroup(QObject *parent)
-    : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false)
+    : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false), isDebouncing(false)
 {
     recentlyChangedRegisters.clear();
     
@@ -30,6 +30,13 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
     connect(editTimer, &QTimer::timeout, this, [this]() {
         isEditing = false;
         qDebug() << "行" << rowIndex << "编辑超时，恢复自动更新";
+    });
+    
+    debounceTimer = new QTimer(this);
+    debounceTimer->setSingleShot(true);
+    connect(debounceTimer, &QTimer::timeout, this, [this]() {
+        isDebouncing = false;
+        qDebug() << "行" << rowIndex << "防抖超时，恢复按钮响应";
     });
 }
 
@@ -99,7 +106,11 @@ void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButto
  */
 void RowButtonGroup::onButtonClicked()
 {
-    if (m_isUpdating) return;
+    if (m_isUpdating || isDebouncing) return;
+
+    // 设置防抖状态，防止快速连续点击
+    isDebouncing = true;
+    debounceTimer->start(200); // 500ms防抖
 
     QPushButton *button = qobject_cast<QPushButton *>(sender());
     if (!button) return;
@@ -211,6 +222,12 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
  */
 void RowButtonGroup::onLoadButtonClicked()
 {
+    if (m_isUpdating || isDebouncing) return;
+
+    // 设置防抖状态，防止快速连续点击
+    isDebouncing = true;
+    debounceTimer->start(200); // 500ms防抖
+
     if (rowIndex != 0) {
         qDebug() << "行" << rowIndex << "的载入暂未实现";
         return;
@@ -317,6 +334,12 @@ void RowButtonGroup::solveCombinations(int target, const QVector<int> &values, i
  */
 void RowButtonGroup::onUnloadButtonClicked()
 {
+    if (m_isUpdating || isDebouncing) return;
+
+    // 设置防抖状态，防止快速连续点击
+    isDebouncing = true;
+    debounceTimer->start(200); // 500ms防抖
+
     if (rowIndex != 0) {
         qDebug() << "行" << rowIndex << "的卸载暂未实现";
         return;
