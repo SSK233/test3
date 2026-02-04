@@ -364,15 +364,7 @@ void MainWindow::clearRow(int rowIndex)
     // 将寄存器加入状态变更缓冲区
     row->recentlyChangedRegisters.insert(row->registerAddress);
     
-    // 读取寄存器的高8位（保持不变），将低8位置0
-    ModbusManager::instance()->readRegister(row->registerAddress, [row](int value) {
-        if (value != -1) {
-            // 保留高8位，低8位置0
-            int newValue = (value & 0xFF00) | 0x0000;
-            
-            ModbusManager::instance()->writeRegister(row->registerAddress, newValue);
-        }
-    });
+    ModbusManager::instance()->writeRegister(row->registerAddress, 0x0000);
     
     // 延迟清理缓冲区（2秒后），避免长时间影响后续读取
     QTimer::singleShot(2000, row, [row]() {

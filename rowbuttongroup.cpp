@@ -134,25 +134,10 @@ void RowButtonGroup::onButtonClicked()
                     return;
                 }
                 
-                ModbusManager::instance()->readRegister(registerAddress, [this, registerValue](int value) {
-                    qDebug() << "读取寄存器回调 - value:" << value << "registerValue:" << registerValue;
-                    if (value != -1) {
-                        int newValue = (value & 0xFF00) | (registerValue & 0x00FF);
-                        
-                        qDebug() << "准备写入寄存器 - 地址:" << registerAddress << "新值:" << newValue;
-                        
-                        ModbusManager::instance()->writeRegister(registerAddress, newValue);
-                        
-                        recentlyChangedRegisters.remove(registerAddress);
-                        qDebug() << "清理缓冲区 - registerAddress:" << registerAddress;
-                        
-                        this->mainWindow->resumeRefreshTimer();
-                    } else {
-                        qDebug() << "读取寄存器失败，value为-1";
-                        recentlyChangedRegisters.remove(registerAddress);
-                        this->mainWindow->resumeRefreshTimer();
-                    }
-                });
+                ModbusManager::instance()->writeRegister(registerAddress, registerValue & 0x00FF);
+                
+                recentlyChangedRegisters.remove(registerAddress);
+                this->mainWindow->resumeRefreshTimer();
         } else {
             qDebug() << "行" << rowIndex << "的按钮点击暂未实现";
         }
@@ -250,13 +235,7 @@ void RowButtonGroup::onLoadButtonClicked()
         
         recentlyChangedRegisters.insert(registerAddress);
         
-        ModbusManager::instance()->readRegister(registerAddress, [this, registerValue](int value) {
-            if (value != -1) {
-                int newValue = (value & 0xFF00) | (registerValue & 0x00FF);
-                
-                ModbusManager::instance()->writeRegister(registerAddress, newValue);
-            }
-        });
+        ModbusManager::instance()->writeRegister(registerAddress, registerValue & 0x00FF);
         
         QTimer::singleShot(2000, this, [this]() {
             recentlyChangedRegisters.clear();
@@ -273,13 +252,7 @@ void RowButtonGroup::onLoadButtonClicked()
         
         recentlyChangedRegisters.insert(registerAddress);
         
-        ModbusManager::instance()->readRegister(registerAddress, [this](int value) {
-            if (value != -1) {
-                int newValue = (value & 0xFF00) | 0x0000;
-                
-                ModbusManager::instance()->writeRegister(registerAddress, newValue);
-            }
-        });
+        ModbusManager::instance()->writeRegister(registerAddress, 0x0000);
         
         QTimer::singleShot(2000, this, [this]() {
             recentlyChangedRegisters.clear();
