@@ -166,6 +166,26 @@ namespace Styles
         "QComboBox QFrame { "
         "border-radius: 5px; "
         "}";
+
+    /**
+     * @brief 单选按钮样式
+     * @details 定义单选按钮的外观，包括正常状态和选中状态
+     */
+    const QString RADIO_BUTTON_STYLE = 
+        "QRadioButton { "
+        "color: #707d98; "
+        "font-size: 14px; "
+        "} "
+        "QRadioButton::indicator { "
+        "width: 15px; "
+        "height: 15px; "
+        "border: 2px solid #707d98; "
+        "border-radius: 5px; "
+        "background-color: #ebecef; "
+        "} "
+        "QRadioButton::indicator:checked { "
+        "background-color: #707d98; "
+        "}";
 }
 
 #endif // STYLES_H

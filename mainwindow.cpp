@@ -77,6 +77,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->key_Refresh_COM->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
     ui->key_OpenOrClose_COM->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
     ui->comboBox_available_COM->setStyleSheet(Styles::COMBO_BOX_STYLE);
+    ui->radioButton_checkOpen->setStyleSheet(Styles::RADIO_BUTTON_STYLE);
     
     // 为textBrowser去掉边框
     ui->textBrowser->setStyleSheet("border: none;");
@@ -141,7 +142,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int fixedRightMargin_keyRefresh = 1159 - 770 - 93; // 93是key_Refresh_COM的宽度
     int fixedRightMargin_keyOpenClose = 1159 - 1050 - 93; // 93是key_OpenOrClose_COM的宽度
     int fixedRightMargin_radioButton = 1159 - 1030 - 21; // 21是radioButton_checkOpen的宽度
-    int fixedRightMargin_label = 1159 - 1030 - 16; // 16是label_19的宽度
+    int fixedRightMargin_label = 1159 - 1030 - 25; // 25是label_19的宽度
     int fixedRightMargin_btnVoltage = 1159 - 600 - 120; // 120是btnVoltageWaveform的宽度
     
     // 重新计算控件的x坐标，保持距离右边框的距离固定
@@ -149,7 +150,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int newX_keyRefresh = newWidth - fixedRightMargin_keyRefresh - 93;
     int newX_keyOpenClose = newWidth - fixedRightMargin_keyOpenClose - 93;
     int newX_radioButton = newWidth - fixedRightMargin_radioButton - 21;
-    int newX_label = newWidth - fixedRightMargin_label - 16;
+    int newX_label = newWidth - fixedRightMargin_label - 25;
     int newX_btnVoltage = newWidth - fixedRightMargin_btnVoltage - 120;
     
     // 应用新的位置
@@ -523,8 +524,8 @@ void MainWindow::resumeRefreshTimer()
  */
 void MainWindow::switchToWaveformPage()
 {
-    // 隐藏blurTransition，但保留topBar可见（因为raiseEffect在topBar中）
-    ui->centralwidget->findChild<QWidget*>("blurTransition")->setVisible(false);
+    // 保留blurTransition可见
+    ui->centralwidget->findChild<QWidget*>("blurTransition")->setVisible(true);
     
     // 隐藏所有按钮，除了返回主界面的按钮
     QList<QPushButton*> buttons = ui->centralwidget->findChildren<QPushButton*>();
