@@ -43,20 +43,23 @@ public:
      * @param btn32 32按钮
      * @param btn64 64按钮
      * @param loadBtn 载入按钮
+     * @param unloadBtn 卸载按钮
      * @param lineEdit 文本框
      * @param mainWindow 主窗口指针
      * @param rowIndex 行索引
-     * @param address 寄存器地址
+     * @param address 按钮状态的寄存器地址
+     * @param loadUnloadAddress 载入和卸载按钮的寄存器地址
      */
     void initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
                    QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
-                   QPushButton *btn64, QPushButton *loadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address);
+                   QPushButton *btn64, QPushButton *loadBtn, QPushButton *unloadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address, int loadUnloadAddress);
 
 public:
     QVector<bool> states;                   // 按钮状态数组
     QLineEdit *lineEdit;                    // 文本框指针
     QSet<int> recentlyChangedRegisters;     // 跟踪最近修改的寄存器地址
-    int registerAddress;                    // 寄存器地址
+    int registerAddress;                    // 按钮状态的寄存器地址
+    int loadUnloadRegisterAddress;          // 载入和卸载按钮的寄存器地址
     
     /**
      * @brief 将按钮状态应用到UI
@@ -79,6 +82,11 @@ private slots:
      * @brief 载入按钮点击事件处理函数
      */
     void onLoadButtonClicked();
+    
+    /**
+     * @brief 卸载按钮点击事件处理函数
+     */
+    void onUnloadButtonClicked();
 
 private:
     QVector<QPushButton*> buttons;          // 按钮数组

@@ -51,7 +51,7 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
  */
 void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
                                QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
-                               QPushButton *btn64, QPushButton *loadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address)
+                               QPushButton *btn64, QPushButton *loadBtn, QPushButton *unloadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address, int loadUnloadAddress)
 {
     buttons = {btn1, btn2, btn4, btn8, btn16, btn32, btn64};
 
@@ -63,12 +63,15 @@ void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButto
     this->mainWindow = mainWindow;
     this->rowIndex = rowIndex;
     this->registerAddress = address;
+    this->loadUnloadRegisterAddress = loadUnloadAddress;
 
     for (int i = 0; i < buttons.size(); ++i) {
         connect(buttons[i], &QPushButton::clicked, this, &RowButtonGroup::onButtonClicked);
     }
 
     connect(loadBtn, &QPushButton::clicked, this, &RowButtonGroup::onLoadButtonClicked);
+
+    connect(unloadBtn, &QPushButton::clicked, this, &RowButtonGroup::onUnloadButtonClicked);
 
     connect(lineEdit, &QLineEdit::textChanged, this, &RowButtonGroup::onLineEditTextChanged);
 
@@ -208,56 +211,42 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
  */
 void RowButtonGroup::onLoadButtonClicked()
 {
-    if (!lineEdit) return;
-
     if (rowIndex != 0) {
         qDebug() << "行" << rowIndex << "的载入暂未实现";
         return;
     }
 
-    QLocale locale;
-    bool ok;
-    double sum = locale.toDouble(lineEdit->text(), &ok);
-
-    if (ok && sum >= 0.0 && sum <= 127.0) {
-        m_isUpdating = true;
-        
-        solveButtonStates(sum);
-        
-        applyButtonStatesToUI();
-        
-        m_isUpdating = false;
-        
-        int registerValue = 0;
-        for (int i = 0; i < BUTTON_COUNT; ++i) {
-            registerValue |= (states[i] ? 1 : 0) << i;
+    qDebug() << "点击载入按钮，准备设置寄存器0的第1位";
+    
+    mainWindow->pauseRefreshTimer();
+    
+    recentlyChangedRegisters.insert(loadUnloadRegisterAddress);
+    
+    // 读取当前寄存器值
+    ModbusManager::instance()->readRegister(loadUnloadRegisterAddress, [this](int currentValue) {
+        if (currentValue != -1) {
+            qDebug() << "当前寄存器值:" << currentValue;
+            
+            // 将第1位置1
+            int setValue = currentValue | (1 << 1);
+            qDebug() << "设置后的值:" << setValue;
+            ModbusManager::instance()->writeRegister(loadUnloadRegisterAddress, setValue & 0x00FF);
+            
+            // 100ms后将第1位置0
+            QTimer::singleShot(100, this, [this, currentValue]() {
+                int resetValue = currentValue & ~(1 << 1);
+                qDebug() << "重置后的值:" << resetValue;
+                ModbusManager::instance()->writeRegister(loadUnloadRegisterAddress, resetValue & 0x00FF);
+                
+                recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+                mainWindow->resumeRefreshTimer();
+            });
+        } else {
+            qDebug() << "读取寄存器失败";
+            recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+            mainWindow->resumeRefreshTimer();
         }
-        
-        recentlyChangedRegisters.insert(registerAddress);
-        
-        ModbusManager::instance()->writeRegister(registerAddress, registerValue & 0x00FF);
-        
-        QTimer::singleShot(2000, this, [this]() {
-            recentlyChangedRegisters.clear();
-        });
-    } 
-    else if (lineEdit->text().isEmpty()) {
-        m_isUpdating = true;
-        
-        states.fill(false);
-        
-        applyButtonStatesToUI();
-        
-        m_isUpdating = false;
-        
-        recentlyChangedRegisters.insert(registerAddress);
-        
-        ModbusManager::instance()->writeRegister(registerAddress, 0x0000);
-        
-        QTimer::singleShot(2000, this, [this]() {
-            recentlyChangedRegisters.clear();
-        });
-    }
+    });
 }
 
 /**
@@ -320,4 +309,48 @@ void RowButtonGroup::solveCombinations(int target, const QVector<int> &values, i
     solveCombinations(target - values[index], values, index + 1, used, bestUsed, bestCount);
     used[index] = false;
     solveCombinations(target, values, index + 1, used, bestUsed, bestCount);
+}
+
+/**
+ * @brief 卸载按钮点击事件处理函数
+ * @details 点击卸载按钮时，将寄存器0的第2位置1，100ms后再置0
+ */
+void RowButtonGroup::onUnloadButtonClicked()
+{
+    if (rowIndex != 0) {
+        qDebug() << "行" << rowIndex << "的卸载暂未实现";
+        return;
+    }
+
+    qDebug() << "点击卸载按钮，准备设置寄存器0的第2位";
+    
+    mainWindow->pauseRefreshTimer();
+    
+    recentlyChangedRegisters.insert(loadUnloadRegisterAddress);
+    
+    // 读取当前寄存器值
+    ModbusManager::instance()->readRegister(loadUnloadRegisterAddress, [this](int currentValue) {
+        if (currentValue != -1) {
+            qDebug() << "当前寄存器值:" << currentValue;
+            
+            // 将第2位置1
+            int setValue = currentValue | (1 << 2);
+            qDebug() << "设置后的值:" << setValue;
+            ModbusManager::instance()->writeRegister(loadUnloadRegisterAddress, setValue & 0x00FF);
+            
+            // 100ms后将第2位置0
+            QTimer::singleShot(100, this, [this, currentValue]() {
+                int resetValue = currentValue & ~(1 << 2);
+                qDebug() << "重置后的值:" << resetValue;
+                ModbusManager::instance()->writeRegister(loadUnloadRegisterAddress, resetValue & 0x00FF);
+                
+                recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+                mainWindow->resumeRefreshTimer();
+            });
+        } else {
+            qDebug() << "读取寄存器失败";
+            recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+            mainWindow->resumeRefreshTimer();
+        }
+    });
 }

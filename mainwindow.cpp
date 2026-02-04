@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_available_COM->setEnabled(true);
 
     // 初始化第0行（第一行）
-    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->pushButton_load, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0);
+    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->pushButton_load, ui->pushButton_2, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0, REGISTER_ADDRESS_LOAD_UNLOAD);
 
 
 
@@ -93,8 +93,7 @@ MainWindow::MainWindow(QWidget *parent)
     view->setStyleSheet(Styles::COMBO_BOX_STYLE);
     ui->comboBox_available_COM->setView(view);
     
-    // 连接卸载按钮点击事件
-    connect(ui->pushButton_2, &QPushButton::clicked, this, [this]() { clearRow(0); });
+    
 
     // 连接textBrowser文本变化事件
     connect(ui->textBrowser, &QTextBrowser::textChanged, this, &MainWindow::on_textBrowser_textChanged);

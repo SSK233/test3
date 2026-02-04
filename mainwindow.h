@@ -36,6 +36,7 @@ class MainWindow;
  * @details 定义各行列对应的Modbus寄存器地址
  */
 constexpr int REGISTER_ADDRESS_ROW0 = 1;  // 电流按钮1~64行对应的寄存器地址，写入电流的寄存器地址
+constexpr int REGISTER_ADDRESS_LOAD_UNLOAD = 0;  // 载入和卸载按钮对应的寄存器地址
 
 /**
  * @class MainWindow
