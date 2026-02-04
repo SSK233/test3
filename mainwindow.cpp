@@ -132,8 +132,32 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     
     // 调整blurTransition宽度以适应窗口宽度
     ui->blurTransition->setGeometry(0, ui->blurTransition->y(), newWidth, ui->blurTransition->height());
+    
+    // 调整topBar上一层控件的位置，保持距离右边框的距离固定
+    // 基于初始布局计算固定的右边距（初始窗口宽度为1159）
+    int fixedRightMargin_comboBox = 1159 - 880 - 131; // 131是comboBox的宽度
+    int fixedRightMargin_keyRefresh = 1159 - 770 - 93; // 93是key_Refresh_COM的宽度
+    int fixedRightMargin_keyOpenClose = 1159 - 1050 - 93; // 93是key_OpenOrClose_COM的宽度
+    int fixedRightMargin_radioButton = 1159 - 1030 - 21; // 21是radioButton_checkOpen的宽度
+    int fixedRightMargin_label = 1159 - 1030 - 16; // 16是label_19的宽度
+    int fixedRightMargin_btnVoltage = 1159 - 600 - 120; // 120是btnVoltageWaveform的宽度
+    
+    // 重新计算控件的x坐标，保持距离右边框的距离固定
+    int newX_comboBox = newWidth - fixedRightMargin_comboBox - 131;
+    int newX_keyRefresh = newWidth - fixedRightMargin_keyRefresh - 93;
+    int newX_keyOpenClose = newWidth - fixedRightMargin_keyOpenClose - 93;
+    int newX_radioButton = newWidth - fixedRightMargin_radioButton - 21;
+    int newX_label = newWidth - fixedRightMargin_label - 16;
+    int newX_btnVoltage = newWidth - fixedRightMargin_btnVoltage - 120;
+    
+    // 应用新的位置
+    ui->comboBox_available_COM->setGeometry(newX_comboBox, ui->comboBox_available_COM->y(), ui->comboBox_available_COM->width(), ui->comboBox_available_COM->height());
+    ui->key_Refresh_COM->setGeometry(newX_keyRefresh, ui->key_Refresh_COM->y(), ui->key_Refresh_COM->width(), ui->key_Refresh_COM->height());
+    ui->key_OpenOrClose_COM->setGeometry(newX_keyOpenClose, ui->key_OpenOrClose_COM->y(), ui->key_OpenOrClose_COM->width(), ui->key_OpenOrClose_COM->height());
+    ui->radioButton_checkOpen->setGeometry(newX_radioButton, ui->radioButton_checkOpen->y(), ui->radioButton_checkOpen->width(), ui->radioButton_checkOpen->height());
+    ui->label_19->setGeometry(newX_label, ui->label_19->y(), ui->label_19->width(), ui->label_19->height());
+    ui->btnVoltageWaveform->setGeometry(newX_btnVoltage, ui->btnVoltageWaveform->y(), ui->btnVoltageWaveform->width(), ui->btnVoltageWaveform->height());
 }
-
 /**
  * @brief 处理textBrowser文本变化事件
  * @details 当textBrowser有文字时显示raiseEffect组件，没有文字时隐藏
