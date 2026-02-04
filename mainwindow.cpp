@@ -193,29 +193,38 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     }
     
     // 调整中间按钮组的位置，使它们整体居中
-    // 计算按钮组的总宽度和起始位置
-    int buttonGroupStartX = 240; // 第一个按钮btn_1的初始x坐标
-    int buttonGroupEndX = 820 + 60; // 最后一个按钮pushButton_2的初始右边缘
-    int buttonGroupWidth = buttonGroupEndX - buttonGroupStartX;
+    // 增大按钮尺寸为50x50
+    int buttonWidth = 50;
+    int buttonHeight = 50;
+    int buttonSpacing = 15;
     
-    // 计算新的按钮组起始x坐标，使其水平居中
-    int newButtonGroupStartX = (newWidth - buttonGroupWidth) / 2;
+    // 第一行：数字按钮组 (btn_1, btn_2, btn_4, btn_8, btn_16, btn_32, btn_64)
+    int firstRowButtonCount = 7;
+    int firstRowWidth = (buttonWidth * firstRowButtonCount) + (buttonSpacing * (firstRowButtonCount - 1));
+    int firstRowStartX = (newWidth - firstRowWidth) / 2;
+    int firstRowY = 325; // 上移一点，留出空间给下一行
     
-    // 计算x坐标偏移量
-    int xOffset = newButtonGroupStartX - buttonGroupStartX;
+    // 调整第一行数字按钮的位置和大小
+    ui->btn_1->setGeometry(firstRowStartX, firstRowY, buttonWidth, buttonHeight);
+    ui->btn_2->setGeometry(firstRowStartX + buttonWidth + buttonSpacing, firstRowY, buttonWidth, buttonHeight);
+    ui->btn_4->setGeometry(firstRowStartX + (buttonWidth + buttonSpacing) * 2, firstRowY, buttonWidth, buttonHeight);
+    ui->btn_8->setGeometry(firstRowStartX + (buttonWidth + buttonSpacing) * 3, firstRowY, buttonWidth, buttonHeight);
+    ui->btn_16->setGeometry(firstRowStartX + (buttonWidth + buttonSpacing) * 4, firstRowY, buttonWidth, buttonHeight);
+    ui->btn_32->setGeometry(firstRowStartX + (buttonWidth + buttonSpacing) * 5, firstRowY, buttonWidth, buttonHeight);
+    ui->btn_64->setGeometry(firstRowStartX + (buttonWidth + buttonSpacing) * 6, firstRowY, buttonWidth, buttonHeight);
     
-    // 调整所有中间按钮和相关控件的位置，使用固定的初始位置作为基准
-    ui->btn_1->setGeometry(240 + xOffset, ui->btn_1->y(), ui->btn_1->width(), ui->btn_1->height());
-    ui->btn_2->setGeometry(290 + xOffset, ui->btn_2->y(), ui->btn_2->width(), ui->btn_2->height());
-    ui->btn_4->setGeometry(340 + xOffset, ui->btn_4->y(), ui->btn_4->width(), ui->btn_4->height());
-    ui->btn_8->setGeometry(390 + xOffset, ui->btn_8->y(), ui->btn_8->width(), ui->btn_8->height());
-    ui->btn_16->setGeometry(440 + xOffset, ui->btn_16->y(), ui->btn_16->width(), ui->btn_16->height());
-    ui->btn_32->setGeometry(490 + xOffset, ui->btn_32->y(), ui->btn_32->width(), ui->btn_32->height());
-    ui->btn_64->setGeometry(540 + xOffset, ui->btn_64->y(), ui->btn_64->width(), ui->btn_64->height());
-    ui->lineEditSum->setGeometry(610 + xOffset, ui->lineEditSum->y(), ui->lineEditSum->width(), ui->lineEditSum->height());
-    ui->label_10->setGeometry(680 + xOffset, ui->label_10->y(), ui->label_10->width(), ui->label_10->height());
-    ui->pushButton_load->setGeometry(730 + xOffset, ui->pushButton_load->y(), ui->pushButton_load->width(), ui->pushButton_load->height());
-    ui->pushButton_2->setGeometry(820 + xOffset, ui->pushButton_2->y(), ui->pushButton_2->width(), ui->pushButton_2->height());
+    // 第二行：输入框和操作按钮 (lineEditSum, label_10, pushButton_load, pushButton_2)
+    int secondRowY = firstRowY + buttonHeight + 20; // 下移20像素
+    int secondRowElementWidths[] = {80, 40, 80, 80}; // lineEditSum, label_10, pushButton_load, pushButton_2
+    int secondRowSpacing = 15;
+    int secondRowWidth = 80 + 40 + 80 + 80 + (secondRowSpacing * 3);
+    int secondRowStartX = (newWidth - secondRowWidth) / 2;
+    
+    // 调整第二行元素的位置
+    ui->lineEditSum->setGeometry(secondRowStartX, secondRowY, 80, buttonHeight);
+    ui->label_10->setGeometry(secondRowStartX + 80 + secondRowSpacing, secondRowY + 5, 40, buttonHeight - 10);
+    ui->pushButton_load->setGeometry(secondRowStartX + 80 + 40 + (secondRowSpacing * 2), secondRowY, 80, buttonHeight);
+    ui->pushButton_2->setGeometry(secondRowStartX + 80 + 40 + 80 + (secondRowSpacing * 3), secondRowY, 80, buttonHeight);
 }
 /**
  * @brief 处理textBrowser文本变化事件
