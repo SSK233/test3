@@ -42,6 +42,7 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
  * @param btn16 16按钮
  * @param btn32 32按钮
  * @param btn64 64按钮
+ * @param loadBtn 载入按钮
  * @param lineEdit 显示总和的文本框
  * @param mainWindow 主窗口指针
  * @param rowIndex 行索引
@@ -50,7 +51,7 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
  */
 void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
                                QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
-                               QPushButton *btn64, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address)
+                               QPushButton *btn64, QPushButton *loadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address)
 {
     buttons = {btn1, btn2, btn4, btn8, btn16, btn32, btn64};
 
@@ -66,6 +67,8 @@ void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButto
     for (int i = 0; i < buttons.size(); ++i) {
         connect(buttons[i], &QPushButton::clicked, this, &RowButtonGroup::onButtonClicked);
     }
+
+    connect(loadBtn, &QPushButton::clicked, this, &RowButtonGroup::onLoadButtonClicked);
 
     connect(lineEdit, &QLineEdit::textChanged, this, &RowButtonGroup::onLineEditTextChanged);
 
@@ -203,8 +206,7 @@ void RowButtonGroup::applyButtonStatesToUI()
 /**
  * @brief 文本框内容变化事件处理函数
  * @param text 文本框的新内容
- * @details 处理文本框输入事件，根据输入的数值自动选择对应的按钮组合，并将结果写入Modbus寄存器
- *          仅处理第一行(rowIndex == 0)，支持0.0-10.0的数值范围
+ * @details 仅标记编辑状态，不自动同步到按钮状态
  */
 void RowButtonGroup::onLineEditTextChanged(const QString &text)
 {
@@ -213,17 +215,24 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
     isEditing = true;
     editTimer->start(2000);
     qDebug() << "行" << rowIndex << "文本正在编辑，重置编辑计时器";
+}
 
-    if (m_isUpdating || !lineEdit) return;
+/**
+ * @brief 载入按钮点击事件处理函数
+ * @details 将文本框的值同步到按钮状态并写入Modbus寄存器
+ */
+void RowButtonGroup::onLoadButtonClicked()
+{
+    if (!lineEdit) return;
 
     if (rowIndex != 0) {
-        qDebug() << "行" << rowIndex << "的文本编辑暂未实现";
+        qDebug() << "行" << rowIndex << "的载入暂未实现";
         return;
     }
 
     QLocale locale;
     bool ok;
-    double sum = locale.toDouble(text, &ok);
+    double sum = locale.toDouble(lineEdit->text(), &ok);
 
     if (ok && sum >= 0.0 && sum <= 127.0) {
         m_isUpdating = true;
@@ -253,7 +262,7 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
             recentlyChangedRegisters.clear();
         });
     } 
-    else if (text.isEmpty()) {
+    else if (lineEdit->text().isEmpty()) {
         m_isUpdating = true;
         
         states.fill(false);

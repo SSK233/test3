@@ -42,6 +42,7 @@ public:
      * @param btn16 16按钮
      * @param btn32 32按钮
      * @param btn64 64按钮
+     * @param loadBtn 载入按钮
      * @param lineEdit 文本框
      * @param mainWindow 主窗口指针
      * @param rowIndex 行索引
@@ -49,7 +50,7 @@ public:
      */
     void initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
                    QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
-                   QPushButton *btn64, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address);
+                   QPushButton *btn64, QPushButton *loadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address);
 
 public:
     QVector<bool> states;                   // 按钮状态数组
@@ -73,6 +74,11 @@ private slots:
      * @param text 新的文本内容
      */
     void onLineEditTextChanged(const QString &text);
+    
+    /**
+     * @brief 载入按钮点击事件处理函数
+     */
+    void onLoadButtonClicked();
 
 private:
     QVector<QPushButton*> buttons;          // 按钮数组

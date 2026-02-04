@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_available_COM->setEnabled(true);
 
     // 初始化第0行（第一行）
-    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0);
+    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->pushButton_load, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0);
 
 
 
