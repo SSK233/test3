@@ -35,27 +35,26 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
 
 /**
  * @brief 初始化行按钮组
- * @param btn0_1 0.1按钮
- * @param btn0_2 0.2按钮
- * @param btn0_2_2 第二个0.2按钮
- * @param btn0_5 0.5按钮
- * @param btn1 1.0按钮
- * @param btn2 2.0按钮
- * @param btn2_2 第二个2.0按钮
- * @param btn5 5.0按钮
+ * @param btn1 1按钮
+ * @param btn2 2按钮
+ * @param btn4 4按钮
+ * @param btn8 8按钮
+ * @param btn16 16按钮
+ * @param btn32 32按钮
+ * @param btn64 64按钮
  * @param lineEdit 显示总和的文本框
  * @param mainWindow 主窗口指针
  * @param rowIndex 行索引
  * @param address Modbus寄存器地址
  * @details 初始化按钮列表、对应数值、按钮状态，并连接信号槽
  */
-void RowButtonGroup::initialize(QPushButton *btn0_1, QPushButton *btn0_2, QPushButton *btn0_2_2,
-                               QPushButton *btn0_5, QPushButton *btn1, QPushButton *btn2,
-                               QPushButton *btn2_2, QPushButton *btn5, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address)
+void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
+                               QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
+                               QPushButton *btn64, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address)
 {
-    buttons = {btn0_1, btn0_2, btn0_2_2, btn0_5, btn1, btn2, btn2_2, btn5};
+    buttons = {btn1, btn2, btn4, btn8, btn16, btn32, btn64};
 
-    values = {0.1, 0.2, 0.2, 0.5, 1.0, 2.0, 2.0, 5.0};
+    values = {1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0};
 
     states.resize(buttons.size(), false);
 
@@ -104,7 +103,7 @@ void RowButtonGroup::onButtonClicked()
     int index = buttons.indexOf(button);
     qDebug() << "按钮索引:" << index << "按钮数量:" << buttons.size();
     
-    if (index != -1 && index < 8) {
+    if (index != -1 && index < BUTTON_COUNT) {
         states[index] = !states[index];
         applyButtonStatesToUI();
         updateSumDisplay();
@@ -117,7 +116,7 @@ void RowButtonGroup::onButtonClicked()
                 mainWindow->pauseRefreshTimer();
                 
                 int registerValue = 0;
-                for (int i = 0; i < 8; ++i) {
+                for (int i = 0; i < BUTTON_COUNT; ++i) {
                     registerValue |= (states[i] ? 1 : 0) << (8 + i);
                 }
                 
@@ -226,7 +225,7 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
     bool ok;
     double sum = locale.toDouble(text, &ok);
 
-    if (ok && sum >= 0.0 && sum <= 10.0) {
+    if (ok && sum >= 0.0 && sum <= 127.0) {
         m_isUpdating = true;
         
         solveButtonStates(sum);
@@ -236,7 +235,7 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
         m_isUpdating = false;
         
         int registerValue = 0;
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < BUTTON_COUNT; ++i) {
             registerValue |= (states[i] ? 1 : 0) << (8 + i);
         }
         

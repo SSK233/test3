@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_available_COM->setEnabled(true);
 
     // 初始化第0行（第一行）
-    row0.initialize(ui->btn_0_1, ui->btn_0_2, ui->btn_0_2_2, ui->btn_0_5, ui->btn_1, ui->btn_2, ui->btn_2_2, ui->btn_5, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0);
+    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0);
 
 
 
@@ -230,10 +230,10 @@ void MainWindow::refreshRow(int rowIndex)
             if (row->recentlyChangedRegisters.contains(registerAddress)) {
                 qDebug() << "寄存器" << registerAddress << "在缓冲区中，保留本地状态";
             } else {
-                // 从寄存器的高8位提取8个按钮的状态
+                // 从寄存器的高8位提取按钮的状态
                 row->m_isUpdating = true;
-                for (int i = 0; i < 8; ++i) {
-                    int bitPosition = 8 + i;  // 按钮0对应第8位，按钮7对应第15位
+                for (int i = 0; i < BUTTON_COUNT; ++i) {
+                    int bitPosition = 8 + i;
                     row->states[i] = (value >> bitPosition) & 0x0001;
                 }
                 row->applyButtonStatesToUI();
@@ -258,7 +258,7 @@ void MainWindow::clearRow(int rowIndex)
     RowButtonGroup *row = &row0;
     
     // 清除所有按钮选中状态
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < BUTTON_COUNT; ++i) {
         row->states[i] = false;
     }
     

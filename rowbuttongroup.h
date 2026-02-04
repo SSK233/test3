@@ -13,6 +13,8 @@
 #include <QVector>
 #include <QTimer>
 
+const int BUTTON_COUNT = 7;
+
 class MainWindow;
 
 /**
@@ -33,22 +35,21 @@ public:
 
     /**
      * @brief 初始化行按钮组
-     * @param btn0_1 0.1按钮
-     * @param btn0_2 0.2按钮
-     * @param btn0_2_2 0.2-2按钮
-     * @param btn0_5 0.5按钮
      * @param btn1 1按钮
      * @param btn2 2按钮
-     * @param btn2_2 2-2按钮
-     * @param btn5 5按钮
+     * @param btn4 4按钮
+     * @param btn8 8按钮
+     * @param btn16 16按钮
+     * @param btn32 32按钮
+     * @param btn64 64按钮
      * @param lineEdit 文本框
      * @param mainWindow 主窗口指针
      * @param rowIndex 行索引
      * @param address 寄存器地址
      */
-    void initialize(QPushButton *btn0_1, QPushButton *btn0_2, QPushButton *btn0_2_2,
-                   QPushButton *btn0_5, QPushButton *btn1, QPushButton *btn2,
-                   QPushButton *btn2_2, QPushButton *btn5, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address);
+    void initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
+                   QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
+                   QPushButton *btn64, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address);
 
 public:
     QVector<bool> states;                   // 按钮状态数组
