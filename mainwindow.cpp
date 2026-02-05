@@ -40,9 +40,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(refreshTimer, &QTimer::timeout, this, &MainWindow::refreshAllRows);
     refreshTimer->start(1000);  // 每5秒刷新一次，减少对PLC的干扰
 
-    // 初始化从站3第0个寄存器读取定时器
+    // 初始化传感器数据读取定时器（电压、电流、功率）
     slave3Timer = new QTimer(this);
-    connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readSlave3Register0);
+    connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readVoltage);
+    connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readCurrent);
+    connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readPower);
     slave3Timer->start(1000);  // 每1秒读取一次
 
     // 等待Modbus连接建立并稳定后再开始刷新
@@ -472,9 +474,9 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
 
 
 
-void MainWindow::readSlave3Register0()
+void MainWindow::readVoltage()
 {
-    ModbusManager::instance()->readSlave3Register0([this](int value) {
+    ModbusManager::instance()->readVoltage([this](int value) {
         if (value != -1) {
             double voltage = value * 0.1;
             
@@ -483,6 +485,30 @@ void MainWindow::readSlave3Register0()
             
             // 更新波形图数据
             m_waveformChart->updateWaveformData(voltage);
+        }
+    });
+}
+
+void MainWindow::readCurrent()
+{
+    ModbusManager::instance()->readCurrent([this](int value) {
+        if (value != -1) {
+            double current = value * 0.1;
+            
+            QString displayStr = QString("电流: %1 A").arg(current, 0, 'f', 1);
+            ui->textBrowser_current->setText(displayStr);
+        }
+    });
+}
+
+void MainWindow::readPower()
+{
+    ModbusManager::instance()->readPower([this](int value) {
+        if (value != -1) {
+            double power = value * 0.1;
+            
+            QString displayStr = QString("功率: %1 W").arg(power, 0, 'f', 1);
+            ui->textBrowser_power->setText(displayStr);
         }
     });
 }

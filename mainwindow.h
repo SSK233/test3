@@ -103,9 +103,19 @@ public:
     void refreshRow(int rowIndex);
     
     /**
-     * @brief 读取从机3的寄存器0
+     * @brief 读取电压数据
      */
-    void readSlave3Register0();
+    void readVoltage();
+    
+    /**
+     * @brief 读取电流数据
+     */
+    void readCurrent();
+    
+    /**
+     * @brief 读取功率数据
+     */
+    void readPower();
     
     /**
      * @brief 切换到波形图页面

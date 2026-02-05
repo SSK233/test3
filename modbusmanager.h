@@ -20,6 +20,20 @@ constexpr int VOLTAGE_SLAVE_ADDRESS = 3;      // 电压数据的从站地址
 constexpr int VOLTAGE_REGISTER_ADDRESS = 0;   // 电压数据的寄存器地址
 
 /**
+ * @brief 电流读取相关常量定义
+ * @details 定义读取电流数据的Modbus配置
+ */
+constexpr int CURRENT_SLAVE_ADDRESS = 3;      // 电流数据的从站地址
+constexpr int CURRENT_REGISTER_ADDRESS = 1;   // 电流数据的寄存器地址
+
+/**
+ * @brief 功率读取相关常量定义
+ * @details 定义读取功率数据的Modbus配置
+ */
+constexpr int POWER_SLAVE_ADDRESS = 3;        // 功率数据的从站地址
+constexpr int POWER_REGISTER_ADDRESS = 2;     // 功率数据的寄存器地址
+
+/**
  * @class ModbusManager
  * @brief Modbus通信管理类
  * @details 负责Modbus RTU串行通信的初始化、读写寄存器、连接状态管理等功能，使用单例模式
@@ -63,10 +77,22 @@ public:
     void readRegister(int address, std::function<void(int)> callback);
     
     /**
-     * @brief 读取从站3的寄存器0（电压数据）
+     * @brief 读取电压数据
      * @param callback 回调函数，用于处理读取结果
      */
-    void readSlave3Register0(std::function<void(int)> callback);
+    void readVoltage(std::function<void(int)> callback);
+    
+    /**
+     * @brief 读取电流数据
+     * @param callback 回调函数，用于处理读取结果
+     */
+    void readCurrent(std::function<void(int)> callback);
+    
+    /**
+     * @brief 读取功率数据
+     * @param callback 回调函数，用于处理读取结果
+     */
+    void readPower(std::function<void(int)> callback);
     
     /**
      * @brief 关闭Modbus连接

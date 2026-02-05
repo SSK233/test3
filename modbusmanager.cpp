@@ -281,10 +281,10 @@ void ModbusManager::readRegister(int address, std::function<void(int)> callback)
 }
 
 /**
- * @brief 读取从站3的寄存器0（电压数据）
+ * @brief 读取电压数据
  * @param callback 读取完成后的回调函数
  */
-void ModbusManager::readSlave3Register0(std::function<void(int)> callback)
+void ModbusManager::readVoltage(std::function<void(int)> callback)
 {
     // 检查Modbus连接状态
     if (!modbusMaster) {
@@ -306,6 +306,102 @@ void ModbusManager::readSlave3Register0(std::function<void(int)> callback)
     QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, VOLTAGE_REGISTER_ADDRESS, 1);
     
     if (auto *reply = modbusMaster->sendReadRequest(readUnit, VOLTAGE_SLAVE_ADDRESS)) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, this, [reply, callback]() {
+                if (reply->error() != QModbusDevice::NoError) {
+                    reply->deleteLater();
+                    callback(-1);
+                    return;
+                }
+                
+                QModbusDataUnit result = reply->result();
+                int value = result.value(0);
+                
+                callback(value);
+                
+                reply->deleteLater();
+            });
+        } else {
+            reply->deleteLater();
+            callback(-1);
+        }
+    } else {
+        callback(-1);
+    }
+}
+
+/**
+ * @brief 读取电流数据
+ * @param callback 读取完成后的回调函数
+ */
+void ModbusManager::readCurrent(std::function<void(int)> callback)
+{
+    if (!modbusMaster) {
+        callback(-1);
+        return;
+    }
+    
+    if (modbusMaster->state() != QModbusDevice::ConnectedState) {
+        callback(-1);
+        return;
+    }
+    
+    if (!m_modbusStable) {
+        callback(-1);
+        return;
+    }
+    
+    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, CURRENT_REGISTER_ADDRESS, 1);
+    
+    if (auto *reply = modbusMaster->sendReadRequest(readUnit, CURRENT_SLAVE_ADDRESS)) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, this, [reply, callback]() {
+                if (reply->error() != QModbusDevice::NoError) {
+                    reply->deleteLater();
+                    callback(-1);
+                    return;
+                }
+                
+                QModbusDataUnit result = reply->result();
+                int value = result.value(0);
+                
+                callback(value);
+                
+                reply->deleteLater();
+            });
+        } else {
+            reply->deleteLater();
+            callback(-1);
+        }
+    } else {
+        callback(-1);
+    }
+}
+
+/**
+ * @brief 读取功率数据
+ * @param callback 读取完成后的回调函数
+ */
+void ModbusManager::readPower(std::function<void(int)> callback)
+{
+    if (!modbusMaster) {
+        callback(-1);
+        return;
+    }
+    
+    if (modbusMaster->state() != QModbusDevice::ConnectedState) {
+        callback(-1);
+        return;
+    }
+    
+    if (!m_modbusStable) {
+        callback(-1);
+        return;
+    }
+    
+    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, POWER_REGISTER_ADDRESS, 1);
+    
+    if (auto *reply = modbusMaster->sendReadRequest(readUnit, POWER_SLAVE_ADDRESS)) {
         if (!reply->isFinished()) {
             connect(reply, &QModbusReply::finished, this, [reply, callback]() {
                 if (reply->error() != QModbusDevice::NoError) {
