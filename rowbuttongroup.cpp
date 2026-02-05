@@ -130,7 +130,6 @@ void RowButtonGroup::onButtonClicked()
         
         m_sumLocked = false;
         updateSumDisplay();
-        m_sumLocked = true;
         
         qDebug() << "按钮状态更新成功 - rowIndex:" << rowIndex << "registerAddress:" << registerAddress;
         
@@ -269,6 +268,9 @@ void RowButtonGroup::onLoadButtonClicked()
     if (ok && targetSum >= 0) {
         solveButtonStates(targetSum);
         applyButtonStatesToUI();
+        
+        m_sumLocked = false;
+        updateSumDisplay();
         
         // 将按钮状态写入寄存器
         mainWindow->pauseRefreshTimer();
@@ -410,12 +412,11 @@ void RowButtonGroup::onUnloadButtonClicked()
     }
     applyButtonStatesToUI();
     
-    // 将lineEditSum设为0
+    // 将lineEditSum设为0并解锁
     m_sumLocked = false;
     m_isUpdating = true;
     lineEdit->setText("0.0");
     m_isUpdating = false;
-    m_sumLocked = true;
 
     qDebug() << "点击卸载按钮，准备设置寄存器0的第2位";
     
