@@ -21,7 +21,7 @@
  * @details 初始化成员变量，创建编辑计时器并设置信号槽连接
  */
 RowButtonGroup::RowButtonGroup(QObject *parent)
-    : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false), isDebouncing(false), fanState(false), fanButton(nullptr)
+    : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false), isDebouncing(false), fanState(false), fanButton(nullptr), m_sumLocked(false)
 {
     recentlyChangedRegisters.clear();
     
@@ -127,7 +127,10 @@ void RowButtonGroup::onButtonClicked()
     if (index != -1 && index < BUTTON_COUNT) {
         states[index] = !states[index];
         applyButtonStatesToUI();
+        
+        m_sumLocked = false;
         updateSumDisplay();
+        m_sumLocked = true;
         
         qDebug() << "按钮状态更新成功 - rowIndex:" << rowIndex << "registerAddress:" << registerAddress;
         
@@ -171,6 +174,11 @@ void RowButtonGroup::onButtonClicked()
 void RowButtonGroup::updateSumDisplay()
 {
     if (!lineEdit) return;
+
+    if (m_sumLocked) {
+        qDebug() << "行" << rowIndex << "和值显示已锁定，跳过更新";
+        return;
+    }
 
     double sum = 0.0;
     for (int i = 0; i < states.size(); ++i) {
@@ -234,7 +242,8 @@ void RowButtonGroup::onLineEditTextChanged(const QString &text)
     
     isEditing = true;
     editTimer->start(2000);
-    qDebug() << "行" << rowIndex << "文本正在编辑，重置编辑计时器";
+    m_sumLocked = true;
+    qDebug() << "行" << rowIndex << "文本正在编辑，重置编辑计时器，锁定和值显示";
 }
 
 /**
@@ -252,6 +261,35 @@ void RowButtonGroup::onLoadButtonClicked()
     if (rowIndex != 0) {
         qDebug() << "行" << rowIndex << "的载入暂未实现";
         return;
+    }
+
+    // 将lineEditSum的值同步到按钮状态
+    bool ok = false;
+    double targetSum = lineEdit->text().toDouble(&ok);
+    if (ok && targetSum >= 0) {
+        solveButtonStates(targetSum);
+        applyButtonStatesToUI();
+        
+        // 将按钮状态写入寄存器
+        mainWindow->pauseRefreshTimer();
+        
+        int registerValue = 0;
+        for (int i = 0; i < BUTTON_COUNT; ++i) {
+            registerValue |= (states[i] ? 1 : 0) << i;
+        }
+        
+        recentlyChangedRegisters.insert(registerAddress);
+        
+        if (!ModbusManager::instance()->isStable()) {
+            qDebug() << "Modbus连接尚未稳定，等待后再尝试操作";
+            recentlyChangedRegisters.remove(registerAddress);
+            mainWindow->resumeRefreshTimer();
+        } else {
+            qDebug() << "载入按钮：写入寄存器" << registerAddress << "值:" << registerValue;
+            ModbusManager::instance()->writeRegister(registerAddress, registerValue & 0x00FF);
+            recentlyChangedRegisters.remove(registerAddress);
+            mainWindow->resumeRefreshTimer();
+        }
     }
 
     qDebug() << "点击载入按钮，准备设置寄存器0的第1位";
@@ -365,6 +403,19 @@ void RowButtonGroup::onUnloadButtonClicked()
         qDebug() << "行" << rowIndex << "的卸载暂未实现";
         return;
     }
+
+    // 清空所有按钮状态
+    for (int i = 0; i < BUTTON_COUNT; ++i) {
+        states[i] = false;
+    }
+    applyButtonStatesToUI();
+    
+    // 将lineEditSum设为0
+    m_sumLocked = false;
+    m_isUpdating = true;
+    lineEdit->setText("0.0");
+    m_isUpdating = false;
+    m_sumLocked = true;
 
     qDebug() << "点击卸载按钮，准备设置寄存器0的第2位";
     

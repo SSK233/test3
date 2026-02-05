@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     // 初始化定时刷新定时器
     refreshTimer = new QTimer(this);
     connect(refreshTimer, &QTimer::timeout, this, &MainWindow::refreshAllRows);
-    refreshTimer->start(1000);  // 每1秒刷新一次
+    refreshTimer->start(1000);  // 每5秒刷新一次，减少对PLC的干扰
 
     // 初始化从站3第7个寄存器读取定时器
     slave3Timer = new QTimer(this);
@@ -142,7 +142,9 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int fixedRightMargin_keyOpenClose = 1159 - 1050 - 93; // 93是key_OpenOrClose_COM的宽度
     int fixedRightMargin_radioButton = 1159 - 1030 - 21; // 21是radioButton_checkOpen的宽度
     int fixedRightMargin_label = 1159 - 1030 - 25; // 25是label_19的宽度
-    int fixedRightMargin_btnVoltage = 1159 - 600 - 120; // 120是btnVoltageWaveform的宽度
+    int fixedRightMargin_btnVoltage = 1159 - 1020 - 120; // 120是btnVoltageWaveform的宽度
+    int fixedRightMargin_fanLabel = 1159 - 810 - 141; // 141是label的宽度
+    int fixedRightMargin_fanButton = 1159 - 1000 - 120; // 120是pushButton_fan的宽度
     
     // 重新计算控件的x坐标，保持距离右边框的距离固定
     int newX_comboBox = newWidth - fixedRightMargin_comboBox - 131;
@@ -151,6 +153,8 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int newX_radioButton = newWidth - fixedRightMargin_radioButton - 21;
     int newX_label = newWidth - fixedRightMargin_label - 25;
     int newX_btnVoltage = newWidth - fixedRightMargin_btnVoltage - 120;
+    int newX_fanLabel = newWidth - fixedRightMargin_fanLabel - 41;
+    int newX_fanButton = newWidth - fixedRightMargin_fanButton - 140;
     
     // 应用新的位置
     ui->comboBox_available_COM->setGeometry(newX_comboBox, ui->comboBox_available_COM->y(), ui->comboBox_available_COM->width(), ui->comboBox_available_COM->height());
@@ -159,6 +163,8 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     ui->radioButton_checkOpen->setGeometry(newX_radioButton, ui->radioButton_checkOpen->y(), ui->radioButton_checkOpen->width(), ui->radioButton_checkOpen->height());
     ui->label_19->setGeometry(newX_label, ui->label_19->y(), ui->label_19->width(), ui->label_19->height());
     ui->btnVoltageWaveform->setGeometry(newX_btnVoltage, ui->btnVoltageWaveform->y(), ui->btnVoltageWaveform->width(), ui->btnVoltageWaveform->height());
+    ui->label->setGeometry(newX_fanLabel, ui->label->y(), ui->label->width(), ui->label->height());
+    ui->pushButton_fan->setGeometry(newX_fanButton, ui->pushButton_fan->y(), ui->pushButton_fan->width(), ui->pushButton_fan->height());
     
     // 调整波形图页面大小以适应窗口大小
     ui->voltageWaveformPage->setGeometry(0, 0, newWidth, newHeight);

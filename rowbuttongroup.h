@@ -129,6 +129,7 @@ private:
 public:
     bool m_isUpdating;                      // 是否正在更新
     int rowIndex;                           // 行索引
+    bool m_sumLocked;                       // 和值显示是否锁定
     
     /**
      * @brief 更新和值显示

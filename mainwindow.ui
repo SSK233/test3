@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1159</width>
-    <height>776</height>
+    <width>1163</width>
+    <height>640</height>
    </rect>
   </property>
   <property name="font">
@@ -254,8 +254,8 @@
    <widget class="QPushButton" name="pushButton_fan">
     <property name="geometry">
      <rect>
-      <x>240</x>
-      <y>470</y>
+      <x>1000</x>
+      <y>340</y>
       <width>120</width>
       <height>40</height>
      </rect>
@@ -362,8 +362,8 @@
    <widget class="QPushButton" name="btnVoltageWaveform">
     <property name="geometry">
      <rect>
-      <x>600</x>
-      <y>20</y>
+      <x>1020</x>
+      <y>110</y>
       <width>120</width>
       <height>28</height>
      </rect>
@@ -418,13 +418,26 @@
      </property>
     </widget>
    </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>840</x>
+      <y>330</y>
+      <width>61</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>风机开关</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1159</width>
+     <width>1163</width>
      <height>48</height>
     </rect>
    </property>
