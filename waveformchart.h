@@ -1,7 +1,7 @@
 /**
  * @file waveformchart.h
  * @brief 波形图类头文件
- * @details 包含WaveformChart类的定义，用于显示实时电压波形图
+ * @details 包含WaveformChart类的定义，用于显示实时波形图（电压/电流/功率）
  */
 
 #ifndef WAVEFORMCHART_H
@@ -17,18 +17,22 @@
 #include <QTimer>
 #include <QToolTip>
 #include <QPoint>
+#include <QColor>
 
 class CustomChartView : public QChartView
 {
     Q_OBJECT
 
 public:
-    explicit CustomChartView(QChart *chart, QWidget *parent = nullptr);
+    explicit CustomChartView(QChart *chart, const QString &unit = QString(), QWidget *parent = nullptr);
 
 protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void leaveEvent(QEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
     QPointF findClosestDataPoint(const QPoint &pos);
@@ -37,6 +41,9 @@ private:
 
 private:
     QPointF m_hoverPoint;
+    QString m_unit;
+    bool m_isPanning;
+    QPoint m_lastPanPoint;
 };
 
 class WaveformChart : public QObject
@@ -44,106 +51,61 @@ class WaveformChart : public QObject
     Q_OBJECT
 
 public:
-    /**
-     * @brief 构造函数
-     * @param parent 父对象指针
-     */
     explicit WaveformChart(QObject *parent = nullptr);
-
-    /**
-     * @brief 析构函数
-     */
     virtual ~WaveformChart();
 
-    /**
-     * @brief 初始化电压波形图
-     * @param chartContainer 用于放置图表的容器
-     * @param pageWidget 包含图表容器的页面
-     */
-    void initVoltageWaveform(QWidget *chartContainer, QWidget *pageWidget);
+    void initWaveform(QWidget *chartContainer, QWidget *pageWidget,
+                      const QString &title, const QString &unit,
+                      const QColor &color);
 
-    /**
-     * @brief 更新波形图数据
-     * @param voltage 电压值
-     */
-    void updateWaveformData(double voltage);
-
-    /**
-     * @brief 启动波形图更新定时器
-     */
+    void updateData(double value);
     void startWaveformUpdate();
-
-    /**
-     * @brief 停止波形图更新定时器
-     */
     void stopWaveformUpdate();
-
-    /**
-     * @brief 清除所有波形图数据
-     */
     void clearWaveformData();
 
-    /**
-     * @brief 设置波形图更新间隔
-     * @param interval 间隔时间（毫秒）
-     */
     void setUpdateInterval(int interval);
-
-    /**
-     * @brief 设置Y轴范围
-     * @param min 最小值
-     * @param max 最大值
-     * @param adaptive 是否使用自适应范围（默认为true）
-     */
     void setYAxisRange(double min, double max, bool adaptive = true);
-
-    /**
-     * @brief 获取当前数据点数量
-     * @return 数据点数量
-     */
     int dataPointCount() const;
-
-    /**
-     * @brief 设置波形图标题
-     * @param title 标题文本
-     */
     void setTitle(const QString &title);
-
-    /**
-     * @brief 更新图表大小，使其与容器大小保持同步
-     * @param chartContainer 图表容器
-     */
     void updateChartSize(QWidget *chartContainer);
 
+    void setVisible(bool visible);
+    bool isVisible() const;
+
+    void zoomIn();
+    void zoomOut();
+    void zoomReset();
+    void pan(double dx, double dy);
+
 signals:
-    /**
-     * @brief 波形图数据更新信号
-     * @param voltageData 电压数据数组
-     */
-    void dataUpdated(const QVector<double> &voltageData);
+    void dataUpdated(const QVector<double> &data);
 
 private:
-    /**
-     * @brief 设置波形图图表
-     * @param chartContainer 用于放置图表的容器
-     * @param pageWidget 包含图表容器的页面
-     */
     void setupWaveformChart(QWidget *chartContainer, QWidget *pageWidget);
+    void updateAdaptiveYAxis();
 
 private:
-    QChart *voltageChart;
-    QLineSeries *voltageSeries;
-    QChartView *chartView;
-    QTimer *waveformUpdateTimer;
-    QVector<double> voltageData;
+    QChart *m_chart;
+    QLineSeries *m_series;
+    CustomChartView *m_chartView;
+    QTimer *m_waveformUpdateTimer;
+
+    QVector<double> m_data;
     int m_dataPointCount;
     static constexpr int MAX_DATA_POINTS = 50;
     double m_currentTimeWindowStart;
     int m_updateInterval;
+
     double m_yAxisMin;
     double m_yAxisMax;
-    QString m_title;
     bool m_useAdaptiveRange;
+    bool m_isInitialized;
+
+    QString m_title;
+    QString m_unit;
+    QColor m_color;
+    QValueAxis *m_axisX;
+    QValueAxis *m_axisY;
 };
 
 #endif // WAVEFORMCHART_H

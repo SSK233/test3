@@ -1,7 +1,7 @@
 /**
  * @file waveformchart.cpp
  * @brief 波形图类实现文件
- * @details WaveformChart类的实现，用于显示实时电压波形图
+ * @details WaveformChart类的实现，用于显示实时波形图
  */
 
 #include "waveformchart.h"
@@ -10,13 +10,19 @@
 #include <QMouseEvent>
 #include <QEvent>
 #include <QApplication>
+#include <QWheelEvent>
+#include <QElapsedTimer>
 
 constexpr int WaveformChart::MAX_DATA_POINTS;
 
-CustomChartView::CustomChartView(QChart *chart, QWidget *parent)
+CustomChartView::CustomChartView(QChart *chart, const QString &unit, QWidget *parent)
     : QChartView(chart, parent)
     , m_hoverPoint()
+    , m_unit(unit)
+    , m_isPanning(false)
 {
+    setRubberBand(QChartView::RectangleRubberBand);
+    setInteractive(true);
 }
 
 QPointF CustomChartView::findClosestDataPoint(const QPoint &pos)
@@ -24,24 +30,26 @@ QPointF CustomChartView::findClosestDataPoint(const QPoint &pos)
     QChart *chart = this->chart();
     if (!chart) return QPointF();
 
-    QList<QAbstractSeries*> series = chart->series();
-    if (series.isEmpty()) return QPointF();
-
-    QLineSeries *lineSeries = qobject_cast<QLineSeries*>(series.first());
-    if (!lineSeries) return QPointF();
+    QList<QAbstractSeries*> seriesList = chart->series();
+    if (seriesList.isEmpty()) return QPointF();
 
     QPointF closestPoint;
     double minDistance = 1e9;
 
     QPointF valuePos = chart->mapToValue(chart->mapFromScene(mapToScene(pos)));
 
-    for (const QPointF &point : lineSeries->points()) {
-        double dx = valuePos.x() - point.x();
-        double dy = valuePos.y() - point.y();
-        double distance = sqrt(dx * dx + dy * dy);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestPoint = point;
+    for (QAbstractSeries *abstractSeries : seriesList) {
+        QLineSeries *lineSeries = qobject_cast<QLineSeries*>(abstractSeries);
+        if (!lineSeries || !lineSeries->isVisible()) continue;
+
+        for (const QPointF &point : lineSeries->points()) {
+            double dx = valuePos.x() - point.x();
+            double dy = valuePos.y() - point.y();
+            double distance = sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = point;
+            }
         }
     }
 
@@ -51,12 +59,19 @@ QPointF CustomChartView::findClosestDataPoint(const QPoint &pos)
 QString CustomChartView::formatToolTipText(const QPointF &dataPoint)
 {
     QString text = QString("<b>时间:</b> %1 s<br>").arg(dataPoint.x(), 0, 'f', 0);
-    text += QString("<b>电压:</b> %2 V").arg(dataPoint.y(), 0, 'f', 3);
+    text += QString("<b>数值:</b> %1 %2").arg(dataPoint.y(), 0, 'f', 3).arg(m_unit);
     return text;
 }
 
 void CustomChartView::mouseMoveEvent(QMouseEvent *event)
 {
+    if (m_isPanning) {
+        QPoint delta = event->pos() - m_lastPanPoint;
+        chart()->scroll(-delta.x(), delta.y());
+        m_lastPanPoint = event->pos();
+        return;
+    }
+
     QPointF dataPoint = findClosestDataPoint(event->position().toPoint());
     
     bool updateNeeded = false;
@@ -67,7 +82,8 @@ void CustomChartView::mouseMoveEvent(QMouseEvent *event)
         }
         QToolTip::hideText();
     } else {
-        if (m_hoverPoint.isNull() || !qFuzzyCompare(m_hoverPoint.x(), dataPoint.x()) || !qFuzzyCompare(m_hoverPoint.y(), dataPoint.y())) {
+        if (m_hoverPoint.isNull() || !qFuzzyCompare(m_hoverPoint.x(), dataPoint.x()) || 
+            !qFuzzyCompare(m_hoverPoint.y(), dataPoint.y())) {
             m_hoverPoint = dataPoint;
             updateNeeded = true;
         }
@@ -144,225 +160,231 @@ void CustomChartView::leaveEvent(QEvent *event)
     QChartView::leaveEvent(event);
 }
 
-/**
- * @brief 构造函数
- * @param parent 父对象指针
- */
+void CustomChartView::wheelEvent(QWheelEvent *event)
+{
+    QChart *chart = this->chart();
+    if (!chart) return;
+
+    const double zoomFactor = 1.15;
+    if (event->angleDelta().y() > 0) {
+        chart->zoom(zoomFactor);
+    } else {
+        chart->zoom(1.0 / zoomFactor);
+    }
+    event->accept();
+}
+
+void CustomChartView::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::MiddleButton || 
+        (event->button() == Qt::LeftButton && event->modifiers() & Qt::ControlModifier)) {
+        m_isPanning = true;
+        m_lastPanPoint = event->pos();
+        setCursor(Qt::ClosedHandCursor);
+        event->accept();
+        return;
+    }
+    QChartView::mousePressEvent(event);
+}
+
+void CustomChartView::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (m_isPanning) {
+        m_isPanning = false;
+        setCursor(Qt::ArrowCursor);
+        event->accept();
+        return;
+    }
+    QChartView::mouseReleaseEvent(event);
+}
+
 WaveformChart::WaveformChart(QObject *parent)
     : QObject(parent)
-    , voltageChart(nullptr)
-    , voltageSeries(nullptr)
-    , chartView(nullptr)
-    , waveformUpdateTimer(nullptr)
+    , m_chart(nullptr)
+    , m_series(nullptr)
+    , m_chartView(nullptr)
+    , m_waveformUpdateTimer(nullptr)
     , m_dataPointCount(0)
     , m_currentTimeWindowStart(0.0)
     , m_updateInterval(1000)
     , m_yAxisMin(0)
     , m_yAxisMax(500)
-    , m_title("电压实时波形图")
     , m_useAdaptiveRange(true)
+    , m_isInitialized(false)
+    , m_title("实时波形图")
+    , m_unit("")
+    , m_color(Qt::red)
+    , m_axisX(nullptr)
+    , m_axisY(nullptr)
 {
 }
 
-/**
- * @brief 析构函数
- */
 WaveformChart::~WaveformChart()
 {
     stopWaveformUpdate();
     clearWaveformData();
 
-    if (chartView) {
-        chartView->setParent(nullptr);
-        delete chartView;
-        chartView = nullptr;
+    if (m_chartView) {
+        m_chartView->setParent(nullptr);
+        delete m_chartView;
+        m_chartView = nullptr;
     }
 
-    if (voltageChart) {
-        delete voltageChart;
-        voltageChart = nullptr;
+    if (m_chart) {
+        delete m_chart;
+        m_chart = nullptr;
     }
 }
 
-/**
- * @brief 初始化电压波形图
- * @param chartContainer 用于放置图表的容器
- * @param pageWidget 包含图表容器的页面
- */
-void WaveformChart::initVoltageWaveform(QWidget *chartContainer, QWidget *pageWidget)
+void WaveformChart::initWaveform(QWidget *chartContainer, QWidget *pageWidget,
+                                  const QString &title, const QString &unit,
+                                  const QColor &color)
 {
+    m_title = title;
+    m_unit = unit;
+    m_color = color;
+    
     setupWaveformChart(chartContainer, pageWidget);
 
-    if (waveformUpdateTimer) {
-        delete waveformUpdateTimer;
+    if (m_waveformUpdateTimer) {
+        delete m_waveformUpdateTimer;
     }
-    waveformUpdateTimer = new QTimer(this);
-    waveformUpdateTimer->setInterval(m_updateInterval);
+    m_waveformUpdateTimer = new QTimer(this);
+    m_waveformUpdateTimer->setInterval(m_updateInterval);
+    
+    m_isInitialized = true;
 }
 
-/**
- * @brief 设置波形图图表
- * @param chartContainer 用于放置图表的容器
- * @param pageWidget 包含图表容器的页面
- */
 void WaveformChart::setupWaveformChart(QWidget *chartContainer, QWidget *pageWidget)
 {
-    if (chartView) {
-        chartView->setParent(nullptr);
-        delete chartView;
+    if (m_chartView) {
+        m_chartView->setParent(nullptr);
+        delete m_chartView;
+        m_chartView = nullptr;
     }
 
-    if (voltageChart) {
-        delete voltageChart;
+    if (m_chart) {
+        delete m_chart;
+        m_chart = nullptr;
     }
 
-    voltageChart = new QChart();
-    voltageChart->setTitle(m_title);
-    voltageChart->setAnimationOptions(QChart::NoAnimation);
-    voltageChart->setMargins(QMargins(10, 10, 10, 30));
-    voltageChart->legend()->setVisible(true);
+    m_chart = new QChart();
+    m_chart->setTitle(m_title);
+    m_chart->setAnimationOptions(QChart::NoAnimation);
+    m_chart->setMargins(QMargins(10, 10, 10, 30));
+    m_chart->legend()->setVisible(false);
 
-    voltageSeries = new QLineSeries();
-    voltageSeries->setName("电压 (V)");
-    voltageChart->addSeries(voltageSeries);
+    m_series = new QLineSeries();
+    m_series->setName(m_title);
+    m_series->setColor(m_color);
+    m_chart->addSeries(m_series);
 
-    QValueAxis *axisX = new QValueAxis();
-    axisX->setTitleText("时间 (s)");
-    axisX->setRange(0, MAX_DATA_POINTS);
-    voltageChart->addAxis(axisX, Qt::AlignBottom);
-    voltageSeries->attachAxis(axisX);
+    m_axisX = new QValueAxis();
+    m_axisX->setTitleText("时间 (s)");
+    m_axisX->setRange(0, MAX_DATA_POINTS);
+    m_chart->addAxis(m_axisX, Qt::AlignBottom);
+    m_series->attachAxis(m_axisX);
 
-    QValueAxis *axisY = new QValueAxis();
-    axisY->setTitleText("电压 (V)");
-    if (!m_useAdaptiveRange) {
-        axisY->setRange(m_yAxisMin, m_yAxisMax);
-    }
-    voltageChart->addAxis(axisY, Qt::AlignLeft);
-    voltageSeries->attachAxis(axisY);
+    m_axisY = new QValueAxis();
+    m_axisY->setTitleText(m_unit);
+    m_axisY->setRange(0, 100);
+    m_chart->addAxis(m_axisY, Qt::AlignLeft);
+    m_series->attachAxis(m_axisY);
 
-    chartView = new CustomChartView(voltageChart);
-    chartView->setRenderHint(QPainter::Antialiasing);
+    m_chartView = new CustomChartView(m_chart, m_unit);
+    m_chartView->setRenderHint(QPainter::Antialiasing);
+    m_chartView->setParent(chartContainer);
+    m_chartView->setGeometry(0, 0, chartContainer->width(), chartContainer->height());
+    m_chartView->show();
 
-    QRect containerRect = chartContainer->geometry();
-    QRect chartRect = containerRect.adjusted(30, 30, -30, -30);
-    chartView->setGeometry(chartRect);
-    chartView->setParent(pageWidget);
-
-    chartContainer->setStyleSheet("background-color: white;");
+    chartContainer->setStyleSheet("background-color: white; border: 1px solid #ccc; border-radius: 5px;");
 }
 
-/**
- * @brief 更新波形图数据
- * @param voltage 电压值
- */
-void WaveformChart::updateWaveformData(double voltage)
+void WaveformChart::updateData(double value)
 {
-    // 添加新的电压数据点到数据列表
-    voltageData.append(voltage);
-    // 更新总数据点计数
+    QElapsedTimer timer;
+    timer.start();
+    
+    m_data.append(value);
     m_dataPointCount++;
 
-    // 如果数据点数量超过最大值，移除最旧的数据点并移动时间窗口起始点
-    if (voltageData.size() > MAX_DATA_POINTS) {
-        voltageData.removeFirst();
+    if (m_data.size() > MAX_DATA_POINTS) {
+        m_data.removeFirst();
         m_currentTimeWindowStart++;
     }
 
-    // 更新图表数据
-    if (voltageSeries) {
-        voltageSeries->clear();
-
-        double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
-        // 重新添加所有数据点到序列，保持时间窗口的连续性
-        for (int i = 0; i < voltageData.size(); ++i) {
+    if (m_series) {
+        m_series->clear();
+        for (int i = 0; i < m_data.size(); ++i) {
             double time = m_currentTimeWindowStart + i;
-            voltageSeries->append(time, voltageData[i]);
-        }
-
-        // 更新X轴范围，确保时间窗口正确显示
-        QValueAxis *axisX = qobject_cast<QValueAxis*>(voltageChart->axisX(voltageSeries));
-        if (axisX) {
-            double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
-            axisX->setRange(m_currentTimeWindowStart, timeWindowEnd);
+            m_series->append(time, m_data[i]);
         }
     }
 
-    // 如果使用自适应Y轴范围，根据数据自动调整Y轴显示范围
-    if (m_useAdaptiveRange && !voltageData.isEmpty()) {
-        double minVoltage = voltageData[0];
-        double maxVoltage = voltageData[0];
-
-        // 遍历所有数据点，找出最小值和最大值
-        for (double v : voltageData) {
-            if (v < minVoltage) minVoltage = v;
-            if (v > maxVoltage) maxVoltage = v;
-        }
-
-        // 计算边距，确保图表显示时留有足够空间
-        double margin = (maxVoltage - minVoltage) * 0.1;
-        // 保证最小边距为0.5，防止显示范围过小
-        if (margin < 0.5) margin = 0.5;
-
-        // 计算新的Y轴显示范围
-        double newMin = minVoltage - margin;
-        double newMax = maxVoltage + margin;
-
-        // 更新Y轴范围
-        QValueAxis *axisY = qobject_cast<QValueAxis*>(voltageChart->axisY(voltageSeries));
-        if (axisY) {
-            axisY->setRange(newMin, newMax);
-        }
+    if (m_axisX) {
+        double timeWindowEnd = m_currentTimeWindowStart + MAX_DATA_POINTS;
+        m_axisX->setRange(m_currentTimeWindowStart, timeWindowEnd);
     }
 
-    // 发送数据更新信号
-    emit dataUpdated(voltageData);
+    updateAdaptiveYAxis();
+    
+    emit dataUpdated(m_data);
+    
+    qint64 elapsed = timer.elapsed();
+    if (elapsed > 500) {
+        qWarning() << "波形数据更新超时:" << elapsed << "ms";
+    }
 }
 
-/**
- * @brief 启动波形图更新定时器
- */
+void WaveformChart::updateAdaptiveYAxis()
+{
+    if (!m_axisY || !m_useAdaptiveRange || m_data.isEmpty()) return;
+
+    double minValue = m_data[0];
+    double maxValue = m_data[0];
+
+    for (double v : m_data) {
+        if (v < minValue) minValue = v;
+        if (v > maxValue) maxValue = v;
+    }
+
+    double margin = (maxValue - minValue) * 0.1;
+    if (margin < 0.5) margin = 0.5;
+    
+    double newMin = minValue - margin;
+    double newMax = maxValue + margin;
+    m_axisY->setRange(newMin, newMax);
+}
+
 void WaveformChart::startWaveformUpdate()
 {
-    if (waveformUpdateTimer && !waveformUpdateTimer->isActive()) {
-        waveformUpdateTimer->start();
-        qDebug() << "波形图更新定时器已启动";
+    if (m_waveformUpdateTimer && !m_waveformUpdateTimer->isActive()) {
+        m_waveformUpdateTimer->start();
+        qDebug() << "波形图更新定时器已启动:" << m_title;
     }
 }
 
-/**
- * @brief 停止波形图更新定时器
- */
 void WaveformChart::stopWaveformUpdate()
 {
-    if (waveformUpdateTimer && waveformUpdateTimer->isActive()) {
-        waveformUpdateTimer->stop();
-        qDebug() << "波形图更新定时器已停止";
+    if (m_waveformUpdateTimer && m_waveformUpdateTimer->isActive()) {
+        m_waveformUpdateTimer->stop();
+        qDebug() << "波形图更新定时器已停止:" << m_title;
     }
 }
 
-/**
- * @brief 清除所有波形图数据
- */
 void WaveformChart::clearWaveformData()
 {
-    voltageData.clear();
+    m_data.clear();
     m_dataPointCount = 0;
     m_currentTimeWindowStart = 0.0;
 
-    if (voltageSeries) {
-        voltageSeries->clear();
-    }
+    if (m_series) m_series->clear();
 
-    QValueAxis *axisX = qobject_cast<QValueAxis*>(voltageChart->axisX());
-    if (axisX) {
-        axisX->setRange(0, MAX_DATA_POINTS);
+    if (m_axisX) {
+        m_axisX->setRange(0, MAX_DATA_POINTS);
     }
 }
 
-/**
- * @brief 设置波形图更新间隔
- * @param interval 间隔时间（毫秒）
- */
 void WaveformChart::setUpdateInterval(int interval)
 {
     if (interval <= 0) {
@@ -372,21 +394,15 @@ void WaveformChart::setUpdateInterval(int interval)
 
     m_updateInterval = interval;
 
-    if (waveformUpdateTimer) {
-        bool wasActive = waveformUpdateTimer->isActive();
-        waveformUpdateTimer->setInterval(interval);
+    if (m_waveformUpdateTimer) {
+        bool wasActive = m_waveformUpdateTimer->isActive();
+        m_waveformUpdateTimer->setInterval(interval);
         if (wasActive) {
-            waveformUpdateTimer->start(interval);
+            m_waveformUpdateTimer->start(interval);
         }
     }
 }
 
-/**
- * @brief 设置Y轴范围
- * @param min 最小值
- * @param max 最大值
- * @param adaptive 是否使用自适应范围
- */
 void WaveformChart::setYAxisRange(double min, double max, bool adaptive)
 {
     if (min >= max) {
@@ -398,46 +414,68 @@ void WaveformChart::setYAxisRange(double min, double max, bool adaptive)
     m_yAxisMax = max;
     m_useAdaptiveRange = adaptive;
 
-    if (voltageChart) {
-        QAbstractAxis *axisY = voltageChart->axisY();
-        QValueAxis *valueAxisY = qobject_cast<QValueAxis*>(axisY);
-        if (valueAxisY) {
-            valueAxisY->setRange(min, max);
-        }
+    if (!adaptive && m_axisY) {
+        m_axisY->setRange(min, max);
     }
 }
 
-/**
- * @brief 获取当前数据点数量
- * @return 数据点数量
- */
 int WaveformChart::dataPointCount() const
 {
     return m_dataPointCount;
 }
 
-/**
- * @brief 设置波形图标题
- * @param title 标题文本
- */
 void WaveformChart::setTitle(const QString &title)
 {
     m_title = title;
 
-    if (voltageChart) {
-        voltageChart->setTitle(title);
+    if (m_chart) {
+        m_chart->setTitle(title);
     }
 }
 
-/**
- * @brief 更新图表大小，使其与容器大小保持同步
- * @param chartContainer 图表容器
- */
 void WaveformChart::updateChartSize(QWidget *chartContainer)
 {
-    if (chartView && chartContainer) {
-        QRect containerRect = chartContainer->geometry();
-        QRect chartRect = containerRect.adjusted(30, 30, -30, -60);
-        chartView->setGeometry(chartRect);
+    if (m_chartView && chartContainer) {
+        m_chartView->setGeometry(0, 0, chartContainer->width(), chartContainer->height());
+    }
+}
+
+void WaveformChart::setVisible(bool visible)
+{
+    if (m_chartView) {
+        m_chartView->setVisible(visible);
+    }
+}
+
+bool WaveformChart::isVisible() const
+{
+    return m_chartView ? m_chartView->isVisible() : false;
+}
+
+void WaveformChart::zoomIn()
+{
+    if (m_chart) {
+        m_chart->zoomIn();
+    }
+}
+
+void WaveformChart::zoomOut()
+{
+    if (m_chart) {
+        m_chart->zoomOut();
+    }
+}
+
+void WaveformChart::zoomReset()
+{
+    if (m_chart) {
+        m_chart->zoomReset();
+    }
+}
+
+void WaveformChart::pan(double dx, double dy)
+{
+    if (m_chart) {
+        m_chart->scroll(dx, dy);
     }
 }

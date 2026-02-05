@@ -88,7 +88,9 @@ private:
     static bool m_serialPortOpen;        // 串口状态标志
     QTimer *refreshTimer;                // 刷新定时器
     QTimer *slave3Timer;                 // 从机3定时器
-    WaveformChart *m_waveformChart;
+    WaveformChart *m_voltageChart;       // 电压波形图
+    WaveformChart *m_currentChart;       // 电流波形图
+    WaveformChart *m_powerChart;         // 功率波形图
 
 public:
     /**

@@ -14,6 +14,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QListView>
+#include <QColor>
 
 bool MainWindow::m_serialPortOpen = false;
 
@@ -105,9 +106,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->btnVoltageWaveform->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
     ui->btnBackToMain->setStyleSheet(Styles::SERIAL_BUTTON_STYLE);
     
-    // 初始化波形图
-    m_waveformChart = new WaveformChart(this);
-    m_waveformChart->initVoltageWaveform(ui->chartContainer, ui->voltageWaveformPage);
+    // 初始化三个独立的波形图
+    m_voltageChart = new WaveformChart(this);
+    m_currentChart = new WaveformChart(this);
+    m_powerChart = new WaveformChart(this);
     
     // 连接波形图按钮点击事件
     connect(ui->btnVoltageWaveform, &QPushButton::clicked, this, &MainWindow::switchToWaveformPage);
@@ -174,27 +176,38 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int newX_btnBackToMain = newWidth - fixedRightMargin_btnBackToMain - 120;
     ui->btnBackToMain->setGeometry(newX_btnBackToMain, ui->btnBackToMain->y(), ui->btnBackToMain->width(), ui->btnBackToMain->height());
     
-    // 调整图表容器大小，使其随界面大小变化而变化并居中
-    // 计算图表容器的新大小，距离blurTransition有10像素距离
+    // 调整三个图表容器的大小和位置
     int chartContainerTop = ui->blurTransition->y() + ui->blurTransition->height() + 10;
-    int chartContainerHeight = newHeight - chartContainerTop - 40; // 底部留40像素边距
-    int chartContainerWidth = newWidth - 40; // 左右各留20像素边距
+    int chartContainerHeight = newHeight - chartContainerTop - 40;
+    int chartContainerWidth = (newWidth - 80) / 3; // 三个图表平分宽度
     
-    // 确保图表容器大小合理
     if (chartContainerWidth < 200) chartContainerWidth = 200;
     if (chartContainerHeight < 200) chartContainerHeight = 200;
     
-    // 计算图表容器的x坐标，使其水平居中
-    int chartContainerX = (newWidth - chartContainerWidth) / 2;
+    QWidget *voltageContainer = ui->voltageWaveformPage->findChild<QWidget*>("voltageChartContainer");
+    QWidget *currentContainer = ui->voltageWaveformPage->findChild<QWidget*>("currentChartContainer");
+    QWidget *powerContainer = ui->voltageWaveformPage->findChild<QWidget*>("powerChartContainer");
     
-    // 应用图表容器的新位置和大小
-    QWidget *chartContainer = ui->voltageWaveformPage->findChild<QWidget*>("chartContainer");
-    if (chartContainer) {
-        chartContainer->setGeometry(chartContainerX, chartContainerTop, chartContainerWidth, chartContainerHeight);
-        
-        // 更新图表大小，使其与容器大小保持同步
-        if (m_waveformChart) {
-            m_waveformChart->updateChartSize(chartContainer);
+    int spacing = 20;
+    int totalWidth = chartContainerWidth * 3 + spacing * 2;
+    int startX = (newWidth - totalWidth) / 2;
+    
+    if (voltageContainer) {
+        voltageContainer->setGeometry(startX, chartContainerTop, chartContainerWidth, chartContainerHeight);
+        if (m_voltageChart) {
+            m_voltageChart->updateChartSize(voltageContainer);
+        }
+    }
+    if (currentContainer) {
+        currentContainer->setGeometry(startX + chartContainerWidth + spacing, chartContainerTop, chartContainerWidth, chartContainerHeight);
+        if (m_currentChart) {
+            m_currentChart->updateChartSize(currentContainer);
+        }
+    }
+    if (powerContainer) {
+        powerContainer->setGeometry(startX + (chartContainerWidth + spacing) * 2, chartContainerTop, chartContainerWidth, chartContainerHeight);
+        if (m_powerChart) {
+            m_powerChart->updateChartSize(powerContainer);
         }
     }
     
@@ -483,8 +496,7 @@ void MainWindow::readVoltage()
             QString displayStr = QString("电压: %1 V").arg(voltage, 0, 'f', 1);
             ui->voltageTextBrowser->setText(displayStr);
             
-            // 更新波形图数据
-            m_waveformChart->updateWaveformData(voltage);
+            m_voltageChart->updateData(voltage);
         }
     });
 }
@@ -497,6 +509,8 @@ void MainWindow::readCurrent()
             
             QString displayStr = QString("电流: %1 A").arg(current, 0, 'f', 1);
             ui->textBrowser_current->setText(displayStr);
+            
+            m_currentChart->updateData(current);
         }
     });
 }
@@ -509,6 +523,8 @@ void MainWindow::readPower()
             
             QString displayStr = QString("功率: %1 KW").arg(power, 0, 'f', 2);
             ui->textBrowser_power->setText(displayStr);
+            
+            m_powerChart->updateData(power);
         }
     });
 }
@@ -579,8 +595,25 @@ void MainWindow::switchToWaveformPage()
     // 显示波形图页面
     ui->voltageWaveformPage->setVisible(true);
     
-    // 启动波形图更新定时器
-    m_waveformChart->startWaveformUpdate();
+    // 初始化波形图（延迟初始化，确保容器已正确布局）
+    static bool waveformInitialized = false;
+    if (!waveformInitialized) {
+        QWidget *voltageContainer = ui->voltageWaveformPage->findChild<QWidget*>("voltageChartContainer");
+        QWidget *currentContainer = ui->voltageWaveformPage->findChild<QWidget*>("currentChartContainer");
+        QWidget *powerContainer = ui->voltageWaveformPage->findChild<QWidget*>("powerChartContainer");
+        
+        if (voltageContainer && currentContainer && powerContainer) {
+            m_voltageChart->initWaveform(voltageContainer, ui->voltageWaveformPage, "电压波形图", "V", QColor(255, 99, 132));
+            m_currentChart->initWaveform(currentContainer, ui->voltageWaveformPage, "电流波形图", "A", QColor(54, 162, 235));
+            m_powerChart->initWaveform(powerContainer, ui->voltageWaveformPage, "功率波形图", "kW", QColor(255, 206, 86));
+            waveformInitialized = true;
+        }
+    }
+    
+    // 启动所有波形图更新定时器
+    m_voltageChart->startWaveformUpdate();
+    m_currentChart->startWaveformUpdate();
+    m_powerChart->startWaveformUpdate();
     
     qDebug() << "已切换到波形图页面";
 }
@@ -590,8 +623,10 @@ void MainWindow::switchToWaveformPage()
  */
 void MainWindow::switchToMainPage()
 {
-    // 停止波形图更新定时器
-    m_waveformChart->stopWaveformUpdate();
+    // 停止所有波形图更新定时器
+    m_voltageChart->stopWaveformUpdate();
+    m_currentChart->stopWaveformUpdate();
+    m_powerChart->stopWaveformUpdate();
     
     // 隐藏波形图页面
     ui->voltageWaveformPage->setVisible(false);

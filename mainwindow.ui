@@ -404,7 +404,7 @@
      </font>
     </property>
     <property name="text">
-     <string>电压波形图</string>
+     <string>波形图</string>
     </property>
    </widget>
    <widget class="QWidget" name="voltageWaveformPage" native="true">
@@ -437,13 +437,33 @@
       <string>返回主界面</string>
      </property>
     </widget>
-    <widget class="QWidget" name="chartContainer" native="true">
+    <widget class="QWidget" name="voltageChartContainer" native="true">
      <property name="geometry">
       <rect>
        <x>20</x>
        <y>60</y>
-       <width>1120</width>
-       <height>840</height>
+       <width>360</width>
+       <height>400</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QWidget" name="currentChartContainer" native="true">
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>60</y>
+       <width>360</width>
+       <height>400</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QWidget" name="powerChartContainer" native="true">
+     <property name="geometry">
+      <rect>
+       <x>780</x>
+       <y>60</y>
+       <width>360</width>
+       <height>400</height>
       </rect>
      </property>
     </widget>
