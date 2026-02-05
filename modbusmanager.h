@@ -31,7 +31,7 @@ constexpr int CURRENT_REGISTER_ADDRESS = 1;   // 电流数据的寄存器地址
  * @details 定义读取功率数据的Modbus配置
  */
 constexpr int POWER_SLAVE_ADDRESS = 3;        // 功率数据的从站地址
-constexpr int POWER_REGISTER_ADDRESS = 2;     // 功率数据的寄存器地址
+constexpr int POWER_REGISTER_ADDRESS = 3;     // 功率数据的寄存器地址
 
 /**
  * @class ModbusManager

@@ -451,11 +451,16 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>840</x>
-      <y>330</y>
-      <width>61</width>
+      <x>890</x>
+      <y>335</y>
+      <width>101</width>
       <height>51</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>风机开关</string>
