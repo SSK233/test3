@@ -281,10 +281,10 @@ void ModbusManager::readRegister(int address, std::function<void(int)> callback)
 }
 
 /**
- * @brief 读取从站3的寄存器7（电压数据）
+ * @brief 读取从站3的寄存器0（电压数据）
  * @param callback 读取完成后的回调函数
  */
-void ModbusManager::readSlave3Register7(std::function<void(int)> callback)
+void ModbusManager::readSlave3Register0(std::function<void(int)> callback)
 {
     // 检查Modbus连接状态
     if (!modbusMaster) {

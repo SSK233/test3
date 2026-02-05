@@ -40,9 +40,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(refreshTimer, &QTimer::timeout, this, &MainWindow::refreshAllRows);
     refreshTimer->start(1000);  // 每5秒刷新一次，减少对PLC的干扰
 
-    // 初始化从站3第7个寄存器读取定时器
+    // 初始化从站3第0个寄存器读取定时器
     slave3Timer = new QTimer(this);
-    connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readSlave3Register7);
+    connect(slave3Timer, &QTimer::timeout, this, &MainWindow::readSlave3Register0);
     slave3Timer->start(1000);  // 每1秒读取一次
 
     // 等待Modbus连接建立并稳定后再开始刷新
@@ -79,8 +79,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_available_COM->setStyleSheet(Styles::COMBO_BOX_STYLE);
     ui->radioButton_checkOpen->setStyleSheet(Styles::RADIO_BUTTON_STYLE);
     
-    // 为textBrowser去掉边框
-    ui->textBrowser->setStyleSheet("border: none;");
     
     // 为顶部横条应用渐变样式
     ui->topBar->setStyleSheet(Styles::TOP_BAR_STYLE);
@@ -95,8 +93,8 @@ MainWindow::MainWindow(QWidget *parent)
     
     
 
-    // 连接textBrowser文本变化事件
-    connect(ui->textBrowser, &QTextBrowser::textChanged, this, &MainWindow::on_textBrowser_textChanged);
+    // 连接voltageTextBrowser文本变化事件
+    connect(ui->voltageTextBrowser, &QTextBrowser::textChanged, this, &MainWindow::on_voltageTextBrowser_textChanged);
 
     // 初始化时隐藏raiseEffect组件
     ui->raiseEffect->hide();
@@ -136,15 +134,15 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     ui->blurTransition->setGeometry(0, ui->blurTransition->y(), newWidth, ui->blurTransition->height());
     
     // 调整topBar上一层控件的位置，保持距离右边框的距离固定
-    // 基于初始布局计算固定的右边距（初始窗口宽度为1159）
-    int fixedRightMargin_comboBox = 1159 - 880 - 131; // 131是comboBox的宽度
-    int fixedRightMargin_keyRefresh = 1159 - 770 - 93; // 93是key_Refresh_COM的宽度
-    int fixedRightMargin_keyOpenClose = 1159 - 1050 - 93; // 93是key_OpenOrClose_COM的宽度
-    int fixedRightMargin_radioButton = 1159 - 1030 - 21; // 21是radioButton_checkOpen的宽度
-    int fixedRightMargin_label = 1159 - 1030 - 25; // 25是label_19的宽度
-    int fixedRightMargin_btnVoltage = 1159 - 1020 - 120; // 120是btnVoltageWaveform的宽度
-    int fixedRightMargin_fanLabel = 1159 - 810 - 141; // 141是label的宽度
-    int fixedRightMargin_fanButton = 1159 - 1000 - 120; // 120是pushButton_fan的宽度
+    // 基于初始布局计算固定的右边距（初始窗口宽度为1163）
+    int fixedRightMargin_comboBox = 1163 - 880 - 131; // 131是comboBox的宽度
+    int fixedRightMargin_keyRefresh = 1163 - 770 - 93; // 93是key_Refresh_COM的宽度
+    int fixedRightMargin_keyOpenClose = 1163 - 1050 - 93; // 93是key_OpenOrClose_COM的宽度
+    int fixedRightMargin_radioButton = 1163 - 1030 - 21; // 21是radioButton_checkOpen的宽度
+    int fixedRightMargin_label = 1163 - 1030 - 25; // 25是label_19的宽度
+    int fixedRightMargin_btnVoltage = 1163 - 1020 - 120; // 120是btnVoltageWaveform的宽度
+    int fixedRightMargin_fanLabel = 1163 - 810 - 141; // 141是label的宽度
+    int fixedRightMargin_fanButton = 1163 - 1050 - 50; // 50是pushButton_fan的宽度，1050是pushButton_fan的x坐标
     
     // 重新计算控件的x坐标，保持距离右边框的距离固定
     int newX_comboBox = newWidth - fixedRightMargin_comboBox - 131;
@@ -154,7 +152,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int newX_label = newWidth - fixedRightMargin_label - 25;
     int newX_btnVoltage = newWidth - fixedRightMargin_btnVoltage - 120;
     int newX_fanLabel = newWidth - fixedRightMargin_fanLabel - 41;
-    int newX_fanButton = newWidth - fixedRightMargin_fanButton - 140;
+    int newX_fanButton = newWidth - fixedRightMargin_fanButton - 50;
     
     // 应用新的位置
     ui->comboBox_available_COM->setGeometry(newX_comboBox, ui->comboBox_available_COM->y(), ui->comboBox_available_COM->width(), ui->comboBox_available_COM->height());
@@ -170,7 +168,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     ui->voltageWaveformPage->setGeometry(0, 0, newWidth, newHeight);
     
     // 调整btnBackToMain按钮的位置，保持距离右边框的距离固定
-    int fixedRightMargin_btnBackToMain = 1159 - 1000 - 120; // 120是btnBackToMain的宽度
+    int fixedRightMargin_btnBackToMain = 1163 - 1000 - 120; // 120是btnBackToMain的宽度
     int newX_btnBackToMain = newWidth - fixedRightMargin_btnBackToMain - 120;
     ui->btnBackToMain->setGeometry(newX_btnBackToMain, ui->btnBackToMain->y(), ui->btnBackToMain->width(), ui->btnBackToMain->height());
     
@@ -233,12 +231,12 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     ui->pushButton_2->setGeometry(secondRowStartX + 80 + 40 + 80 + (secondRowSpacing * 3), secondRowY, 80, buttonHeight);
 }
 /**
- * @brief 处理textBrowser文本变化事件
- * @details 当textBrowser有文字时显示raiseEffect组件，没有文字时隐藏
+ * @brief 处理voltageTextBrowser文本变化事件
+ * @details 当voltageTextBrowser有文字时显示raiseEffect组件，没有文字时隐藏
  */
-void MainWindow::on_textBrowser_textChanged()
+void MainWindow::on_voltageTextBrowser_textChanged()
 {
-    QString text = ui->textBrowser->toPlainText().trimmed();
+    QString text = ui->voltageTextBrowser->toPlainText().trimmed();
     
     if (text.isEmpty()) {
         ui->raiseEffect->hide();
@@ -422,8 +420,8 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
         // 关闭Modbus连接
         ModbusManager::instance()->closeModbus();
         
-        // 清除textBrowser显示的电压信息
-        ui->textBrowser->clear();
+        // 清除voltageTextBrowser显示的电压信息
+        ui->voltageTextBrowser->clear();
         
         // 更新状态标志
         MainWindow::m_serialPortOpen = false;
@@ -474,14 +472,14 @@ void MainWindow::on_key_OpenOrClose_COM_clicked()
 
 
 
-void MainWindow::readSlave3Register7()
+void MainWindow::readSlave3Register0()
 {
-    ModbusManager::instance()->readSlave3Register7([this](int value) {
+    ModbusManager::instance()->readSlave3Register0([this](int value) {
         if (value != -1) {
             double voltage = value * 0.1;
             
             QString displayStr = QString("电压: %1 V").arg(voltage, 0, 'f', 1);
-            ui->textBrowser->setText(displayStr);
+            ui->voltageTextBrowser->setText(displayStr);
             
             // 更新波形图数据
             m_waveformChart->updateWaveformData(voltage);
@@ -602,8 +600,8 @@ void MainWindow::switchToMainPage()
         radio->setVisible(true);
     }
     
-    // 确保textBrowser可见
-    ui->textBrowser->setVisible(true);
+    // 确保voltageTextBrowser可见
+    ui->voltageTextBrowser->setVisible(true);
     
     qDebug() << "已切换到主界面";
 }

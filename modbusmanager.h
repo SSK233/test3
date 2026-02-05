@@ -17,7 +17,7 @@
  * @details 定义读取电压数据的Modbus配置
  */
 constexpr int VOLTAGE_SLAVE_ADDRESS = 3;      // 电压数据的从站地址
-constexpr int VOLTAGE_REGISTER_ADDRESS = 7;   // 电压数据的寄存器地址
+constexpr int VOLTAGE_REGISTER_ADDRESS = 0;   // 电压数据的寄存器地址
 
 /**
  * @class ModbusManager
@@ -63,10 +63,10 @@ public:
     void readRegister(int address, std::function<void(int)> callback);
     
     /**
-     * @brief 读取从站3的寄存器7（电压数据）
+     * @brief 读取从站3的寄存器0（电压数据）
      * @param callback 回调函数，用于处理读取结果
      */
-    void readSlave3Register7(std::function<void(int)> callback);
+    void readSlave3Register0(std::function<void(int)> callback);
     
     /**
      * @brief 关闭Modbus连接

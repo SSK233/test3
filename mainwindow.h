@@ -78,9 +78,9 @@ private slots:
     void on_key_OpenOrClose_COM_clicked();
     
     /**
-     * @brief textBrowser文本变化处理函数
+     * @brief voltageTextBrowser文本变化处理函数
      */
-    void on_textBrowser_textChanged();
+    void on_voltageTextBrowser_textChanged();
 
 private:
     Ui::MainWindow *ui;                  // UI界面指针
@@ -103,9 +103,9 @@ public:
     void refreshRow(int rowIndex);
     
     /**
-     * @brief 读取从机3的寄存器7
+     * @brief 读取从机3的寄存器0
      */
-    void readSlave3Register7();
+    void readSlave3Register0();
     
     /**
      * @brief 切换到波形图页面
