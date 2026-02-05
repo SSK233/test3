@@ -143,7 +143,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     int fixedRightMargin_radioButton = 1163 - 1030 - 21; // 21是radioButton_checkOpen的宽度
     int fixedRightMargin_label = 1163 - 1030 - 25; // 25是label_19的宽度
     int fixedRightMargin_btnVoltage = 1163 - 1020 - 120; // 120是btnVoltageWaveform的宽度
-    int fixedRightMargin_fanLabel = 1163 - 960 - 101; // 141是label的宽度
+    int fixedRightMargin_fanLabel = 1163 - 960 - 101; // 101是label的宽度
     int fixedRightMargin_fanButton = 1163 - 1050 - 50; // 50是pushButton_fan的宽度，1050是pushButton_fan的x坐标
     
     // 重新计算控件的x坐标，保持距离右边框的距离固定
