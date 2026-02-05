@@ -55,14 +55,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_available_COM->setEnabled(true);
 
     // 初始化第0行（第一行）
-    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->pushButton_load, ui->pushButton_2, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0, REGISTER_ADDRESS_LOAD_UNLOAD);
+    row0.initialize(ui->btn_1, ui->btn_2, ui->btn_4, ui->btn_8, ui->btn_16, ui->btn_32, ui->btn_64, ui->pushButton_load, ui->pushButton_2, ui->pushButton_fan, ui->lineEditSum, this, 0, REGISTER_ADDRESS_ROW0, REGISTER_ADDRESS_LOAD_UNLOAD);
 
 
 
     // 为所有"载入"和"卸载"按钮应用样式
     QList<QPushButton*> pushButtons = this->findChildren<QPushButton*>();
     for (QPushButton* btn : pushButtons) {
-        if (btn->objectName().startsWith("pushButton")) {
+        if (btn->objectName().startsWith("pushButton") && btn->objectName() != "pushButton_fan") {
             btn->setStyleSheet(Styles::PUSH_BUTTON_STYLE);
         }
     }

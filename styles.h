@@ -186,6 +186,70 @@ namespace Styles
         "QRadioButton::indicator:checked { "
         "background-color: #707d98; "
         "}";
+
+    /**
+     * @brief 滑块按钮关闭状态样式
+     * @details 定义滑块按钮关闭状态的外观
+     */
+    const QString SLIDER_BUTTON_OFF_STYLE = 
+        "QPushButton { "
+        "background-color: #999999; "
+        "color: white; "
+        "font-size: 16px; "
+        "font-weight: bold; "
+        "border-radius: 20px; "
+        "border: none; "
+        "padding: 10px 30px; "
+        "text-align: left; "
+        "padding-left: 20px; "
+        "position: relative; "
+        "overflow: hidden; "
+        "min-width: 120px; "
+        "max-width: 120px; "
+        "}"
+        "QPushButton::after { "
+        "content: ''; "
+        "position: absolute; "
+        "top: 5px; "
+        "left: 5px; "
+        "width: 30px; "
+        "height: 30px; "
+        "background-color: white; "
+        "border-radius: 50%; "
+        "transition: all 0.3s ease; "
+        "}";
+
+    /**
+     * @brief 滑块按钮开启状态样式
+     * @details 定义滑块按钮开启状态的外观
+     */
+    const QString SLIDER_BUTTON_ON_STYLE = 
+        "QPushButton { "
+        "background-color: #4CAF50; "
+        "color: white; "
+        "font-size: 16px; "
+        "font-weight: bold; "
+        "border-radius: 20px; "
+        "border: none; "
+        "padding: 10px 30px; "
+        "text-align: right; "
+        "padding-right: 20px; "
+        "position: relative; "
+        "overflow: hidden; "
+        "min-width: 120px; "
+        "max-width: 120px; "
+        "}"
+        "QPushButton::after { "
+        "content: ''; "
+        "position: absolute; "
+        "top: 5px; "
+        "right: 5px; "
+        "width: 30px; "
+        "height: 30px; "
+        "background-color: white; "
+        "border-radius: 50%; "
+        "transition: all 0.3s ease; "
+        "}";
 }
 
 #endif // STYLES_H

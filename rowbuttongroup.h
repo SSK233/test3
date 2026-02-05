@@ -44,6 +44,7 @@ public:
      * @param btn64 64按钮
      * @param loadBtn 载入按钮
      * @param unloadBtn 卸载按钮
+     * @param fanBtn 风机开关按钮
      * @param lineEdit 文本框
      * @param mainWindow 主窗口指针
      * @param rowIndex 行索引
@@ -52,7 +53,7 @@ public:
      */
     void initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
                    QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
-                   QPushButton *btn64, QPushButton *loadBtn, QPushButton *unloadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address, int loadUnloadAddress);
+                   QPushButton *btn64, QPushButton *loadBtn, QPushButton *unloadBtn, QPushButton *fanBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address, int loadUnloadAddress);
 
 public:
     QVector<bool> states;                   // 按钮状态数组
@@ -60,11 +61,18 @@ public:
     QSet<int> recentlyChangedRegisters;     // 跟踪最近修改的寄存器地址
     int registerAddress;                    // 按钮状态的寄存器地址
     int loadUnloadRegisterAddress;          // 载入和卸载按钮的寄存器地址
+    bool fanState;                          // 风机开关状态
     
     /**
      * @brief 将按钮状态应用到UI
      */
-    void applyButtonStatesToUI(); 
+    void applyButtonStatesToUI();
+    
+    /**
+     * @brief 更新风机按钮状态
+     * @details 根据风机状态更新按钮的样式和文本
+     */
+    void updateFanButtonState(); 
 
 private slots:
     /**
@@ -87,6 +95,11 @@ private slots:
      * @brief 卸载按钮点击事件处理函数
      */
     void onUnloadButtonClicked();
+    
+    /**
+     * @brief 风机开关按钮点击事件处理函数
+     */
+    void onFanButtonClicked();
 
 private:
     QVector<QPushButton*> buttons;          // 按钮数组
@@ -94,6 +107,7 @@ private:
     MainWindow *mainWindow;                 // 主窗口指针
     QTimer *debounceTimer;                  // 按钮防抖定时器
     bool isDebouncing;                      // 是否处于防抖状态
+    QPushButton *fanButton;                 // 风机开关按钮指针
 
     /**
      * @brief 根据目标和值求解按钮状态

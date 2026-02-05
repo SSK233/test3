@@ -254,8 +254,8 @@
    <widget class="QPushButton" name="pushButton_fan">
     <property name="geometry">
      <rect>
-      <x>240</x>
-      <y>470</y>
+      <x>1030</x>
+      <y>340</y>
       <width>120</width>
       <height>40</height>
      </rect>
@@ -362,8 +362,8 @@
    <widget class="QPushButton" name="btnVoltageWaveform">
     <property name="geometry">
      <rect>
-      <x>600</x>
-      <y>20</y>
+      <x>1020</x>
+      <y>110</y>
       <width>120</width>
       <height>28</height>
      </rect>
@@ -417,6 +417,19 @@
       </rect>
      </property>
     </widget>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>880</x>
+      <y>330</y>
+      <width>141</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>风机开关</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

@@ -21,7 +21,7 @@
  * @details 初始化成员变量，创建编辑计时器并设置信号槽连接
  */
 RowButtonGroup::RowButtonGroup(QObject *parent)
-    : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false), isDebouncing(false)
+    : QObject(parent), lineEdit(nullptr), m_isUpdating(false), isEditing(false), isDebouncing(false), fanState(false), fanButton(nullptr)
 {
     recentlyChangedRegisters.clear();
     
@@ -58,7 +58,7 @@ RowButtonGroup::RowButtonGroup(QObject *parent)
  */
 void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButton *btn4,
                                QPushButton *btn8, QPushButton *btn16, QPushButton *btn32,
-                               QPushButton *btn64, QPushButton *loadBtn, QPushButton *unloadBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address, int loadUnloadAddress)
+                               QPushButton *btn64, QPushButton *loadBtn, QPushButton *unloadBtn, QPushButton *fanBtn, QLineEdit *lineEdit, MainWindow *mainWindow, int rowIndex, int address, int loadUnloadAddress)
 {
     buttons = {btn1, btn2, btn4, btn8, btn16, btn32, btn64};
 
@@ -71,6 +71,7 @@ void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButto
     this->rowIndex = rowIndex;
     this->registerAddress = address;
     this->loadUnloadRegisterAddress = loadUnloadAddress;
+    this->fanButton = fanBtn;
 
     for (int i = 0; i < buttons.size(); ++i) {
         connect(buttons[i], &QPushButton::clicked, this, &RowButtonGroup::onButtonClicked);
@@ -79,6 +80,8 @@ void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButto
     connect(loadBtn, &QPushButton::clicked, this, &RowButtonGroup::onLoadButtonClicked);
 
     connect(unloadBtn, &QPushButton::clicked, this, &RowButtonGroup::onUnloadButtonClicked);
+
+    connect(fanBtn, &QPushButton::clicked, this, &RowButtonGroup::onFanButtonClicked);
 
     connect(lineEdit, &QLineEdit::textChanged, this, &RowButtonGroup::onLineEditTextChanged);
 
@@ -95,6 +98,7 @@ void RowButtonGroup::initialize(QPushButton *btn1, QPushButton *btn2, QPushButto
     });
 
     applyButtonStatesToUI();
+    updateFanButtonState();
 
     updateSumDisplay();
 }
@@ -199,6 +203,23 @@ void RowButtonGroup::applyButtonStatesToUI()
         } else {
             buttons[i]->setStyleSheet(Styles::BUTTON_UNSELECTED_STYLE);
         }
+    }
+}
+
+/**
+ * @brief 更新风机按钮状态
+ * @details 根据风机状态更新按钮的样式和文本
+ */
+void RowButtonGroup::updateFanButtonState()
+{
+    if (!fanButton) return;
+    
+    if (fanState) {
+        fanButton->setStyleSheet(Styles::SLIDER_BUTTON_ON_STYLE);
+        fanButton->setText("开");
+    } else {
+        fanButton->setStyleSheet(Styles::SLIDER_BUTTON_OFF_STYLE);
+        fanButton->setText("关");
     }
 }
 
@@ -376,4 +397,68 @@ void RowButtonGroup::onUnloadButtonClicked()
             mainWindow->resumeRefreshTimer();
         }
     });
+}
+
+/**
+ * @brief 风机开关按钮点击事件处理函数
+ * @details 处理风机开关按钮点击事件，切换风机状态，更新UI，并将状态写入寄存器的第0位
+ */
+void RowButtonGroup::onFanButtonClicked()
+{
+    if (m_isUpdating || isDebouncing) return;
+
+    // 设置防抖状态，防止快速连续点击
+    isDebouncing = true;
+    debounceTimer->start(200);
+
+    qDebug() << "点击风机开关按钮，当前状态:" << fanState;
+    
+    // 切换风机状态
+    fanState = !fanState;
+    
+    // 更新按钮UI
+    updateFanButtonState();
+    
+    if (rowIndex == 0) {
+        qDebug() << "正在处理第一行风机开关，准备写入寄存器" << loadUnloadRegisterAddress;
+        
+        mainWindow->pauseRefreshTimer();
+        
+        recentlyChangedRegisters.insert(loadUnloadRegisterAddress);
+        
+        if (!ModbusManager::instance()->isStable()) {
+            qDebug() << "Modbus连接尚未稳定，等待后再尝试操作";
+            recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+            mainWindow->resumeRefreshTimer();
+            return;
+        }
+        
+        // 读取当前寄存器值
+        ModbusManager::instance()->readRegister(loadUnloadRegisterAddress, [this](int currentValue) {
+            if (currentValue != -1) {
+                qDebug() << "当前寄存器值:" << currentValue;
+                
+                int setValue;
+                if (fanState) {
+                    // 将第0位置1
+                    setValue = currentValue | (1 << 0);
+                } else {
+                    // 将第0位置0
+                    setValue = currentValue & ~(1 << 0);
+                }
+                
+                qDebug() << "设置后的值:" << setValue;
+                ModbusManager::instance()->writeRegister(loadUnloadRegisterAddress, setValue & 0x00FF);
+                
+                recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+                mainWindow->resumeRefreshTimer();
+            } else {
+                qDebug() << "读取寄存器失败";
+                recentlyChangedRegisters.remove(loadUnloadRegisterAddress);
+                mainWindow->resumeRefreshTimer();
+            }
+        });
+    } else {
+        qDebug() << "行" << rowIndex << "的风机开关暂未实现";
+    }
 }
